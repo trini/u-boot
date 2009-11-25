@@ -161,8 +161,7 @@
 #define CONFIG_SYS_I2C_BUS_SELECT	1
 #define CONFIG_DRIVER_OMAP34XX_I2C	1
 
-#undef CONFIG_CMD_NET
-#undef CONFIG_CMD_NFS
+#define CONFIG_CMD_NET
 /*
  * Board NAND Info.
  */
@@ -325,10 +324,27 @@
 #define CONFIG_SYS_JFFS2_FIRST_BANK	CONFIG_SYS_MAX_FLASH_BANKS
 #define CONFIG_SYS_JFFS2_NUM_BANKS	1
 
+/*-----------------------------------------------------
+ * ethernet support for AM3517 EVM
+ *------------------------------------------------
+ */
+#if defined(CONFIG_CMD_NET)
+#define CONFIG_DRIVER_TI_EMAC
+#define CONFIG_DRIVER_TI_EMAC_USE_RMII
+#define CONFIG_MII
+#define	CONFIG_BOOTP_DEFAULT
+#define CONFIG_BOOTP_DNS
+#define CONFIG_BOOTP_DNS2
+#define CONFIG_BOOTP_SEND_HOSTNAME
+#define CONFIG_NET_RETRY_COUNT 10
+#define CONFIG_NET_MULTI
+#endif
+
 #define CONFIG_SYS_SDRAM_BASE		PHYS_SDRAM_1
 #define CONFIG_SYS_INIT_RAM_ADDR	0x4020f800
 #define CONFIG_SYS_INIT_RAM_SIZE	0x800
 #define CONFIG_SYS_INIT_SP_ADDR		(CONFIG_SYS_INIT_RAM_ADDR + \
 					 CONFIG_SYS_INIT_RAM_SIZE - \
 					 GENERATED_GBL_DATA_SIZE)
+
 #endif /* __CONFIG_H */
