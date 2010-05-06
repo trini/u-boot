@@ -48,6 +48,9 @@ $(obj).depend:
 
 else	# ! CYGWIN
 
+COBJS-$(CONFIG_EMIF4)	+= emif4.o
+COBJS-$(CONFIG_SDRC)	+= sdrc.o
+
 all:	$(obj).depend $(BINS)
 
 $(obj)gdbsend:	$(obj)gdbsend.o $(obj)error.o $(obj)remote.o $(obj)serial.o
