@@ -120,26 +120,46 @@
 /* Probe all devices */
 #define CONFIG_SYS_I2C_NOPROBES		{{0x0, 0x0}}
 
-/* USB */
-#define CONFIG_MUSB_UDC			1
-#define CONFIG_USB_OMAP3		1
-#define CONFIG_TWL4030_USB		1
+/* USB
+ * Enable CONFIG_MUSB_HCD for Host functionalities MSC, keyboard
+ * Enable CONFIG_MUSB_UDC for Device functionalities.  Enable CONFIG_USB_EHCI
+ * to use the EHCI driver for Host functionalities.
+ */
+#define CONFIG_USB_OMAP3
+#define CONFIG_MUSB_HCD
+/* #define CONFIG_MUSB_UDC */
+/* #define CONFIG_USB_EHCI */
+/* #define CONFIG_SYS_USB_EHCI_MAX_ROOT_PORTS 3 */
+#define CONFIG_TWL4030_USB
 
-/* USB device configuration */
-#define CONFIG_USB_DEVICE		1
-#define CONFIG_USB_TTY			1
-#define CONFIG_SYS_CONSOLE_IS_IN_ENV	1
+#ifdef CONFIG_USB_OMAP3
 
-/* USB EHCI */
+#ifdef CONFIG_MUSB_HCD
 #define CONFIG_CMD_USB
-#define CONFIG_USB_EHCI
-#define CONFIG_SYS_USB_EHCI_MAX_ROOT_PORTS 3
 #define CONFIG_USB_HOST_ETHER
 #define CONFIG_USB_ETHER_SMSC95XX
 #define CONFIG_USB_ETHER_ASIX
 
 #define CONFIG_NET_MULTI
 
+#define CONFIG_USB_STORAGE
+#define CONGIG_CMD_STORAGE
+#define CONFIG_CMD_FAT
+
+#ifdef CONFIG_USB_KEYBOARD
+#define CONFIG_SYS_USB_EVENT_POLL
+#define CONFIG_PREBOOT "usb start"
+#endif /* CONFIG_USB_KEYBOARD */
+
+#endif /* CONFIG_MUSB_HCD */
+
+#ifdef CONFIG_MUSB_UDC
+/* USB device configuration */
+#define CONFIG_USB_DEVICE
+#define CONFIG_USB_TTY
+#define CONFIG_SYS_CONSOLE_IS_IN_ENV
+#endif /* CONFIG_MUSB_UDC */
+#endif /* CONFIG_USB_OMAP3 */
 /* commands to include */
 #include <config_cmd_default.h>
 
