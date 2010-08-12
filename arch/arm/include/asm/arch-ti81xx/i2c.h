@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2004-2010
+ * (C) Copyright 2004-2008
  * Texas Instruments, <www.ti.com>
  *
  * See file CREDITS for list of people who contributed to this
@@ -20,8 +20,35 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
  */
-#ifndef _OMAP2PLUS_I2C_H_
-#define _OMAP2PLUS_I2C_H_
+#ifndef _I2C_H_
+#define _I2C_H_
+
+#define	I2C_BASE1	0x48028000
+#define	I2C_BASE2	0x4802A000
+#define I2C_BUS_MAX	2
+
+#define I2C_DEFAULT_BASE	I2C_BASE1
+#define I2C_IP_CLK		48000000
+#define I2C_INTERNAL_SAMLPING_CLK	12000000
+
+#define I2C_IP_CLK			48000000
+#define I2C_INTERNAL_SAMLPING_CLK	12000000
+
+#define I2C_REV		(I2C_DEFAULT_BASE + 0x00)
+#define I2C_IE		(I2C_DEFAULT_BASE + 0x2C)
+#define I2C_STAT	(I2C_DEFAULT_BASE + 0x28)
+#define I2C_SYSS	(I2C_DEFAULT_BASE + 0x90)
+#define I2C_BUF		(I2C_DEFAULT_BASE + 0x94)
+#define I2C_CNT		(I2C_DEFAULT_BASE + 0x98)
+#define I2C_DATA	(I2C_DEFAULT_BASE + 0x9c)
+#define I2C_CON		(I2C_DEFAULT_BASE + 0xA4)
+#define I2C_SYSC	(I2C_DEFAULT_BASE + 0x20)
+#define I2C_OA		(I2C_DEFAULT_BASE + 0xA8)
+#define I2C_SA		(I2C_DEFAULT_BASE + 0xAC)
+#define I2C_PSC		(I2C_DEFAULT_BASE + 0xB0)
+#define I2C_SCLL	(I2C_DEFAULT_BASE + 0xB4)
+#define I2C_SCLH	(I2C_DEFAULT_BASE + 0xB8)
+#define I2C_SYSTEST	(I2C_DEFAULT_BASE + 0xBc)
 
 /* I2C masks */
 
@@ -85,10 +112,6 @@
 #define I2C_SYSTEST_SDA_I	(1 << 1)  /* SDA line sense input value */
 #define I2C_SYSTEST_SDA_O	(1 << 0)  /* SDA line drive output value */
 
-/* I2C System Status Register (I2C_SYSS): */
-
-#define I2C_SYSS_RDONE          (1 << 0)  /* Internel reset monitoring */
-
 #define I2C_SCLL_SCLL		0
 #define I2C_SCLL_SCLL_M		0xFF
 #define I2C_SCLL_HSSCLL		8
@@ -97,6 +120,15 @@
 #define I2C_SCLH_SCLH_M		0xFF
 #define I2C_SCLH_HSSCLH		8
 #define I2C_SCLH_HSSCLH_M	0xFF
+
+#define OMAP_I2C_STANDARD	100000
+#define OMAP_I2C_FAST_MODE	400000
+#define OMAP_I2C_HIGH_SPEED	3400000
+
+#define SYSTEM_CLOCK_12		12000000
+#define SYSTEM_CLOCK_13		13000000
+#define SYSTEM_CLOCK_192	19200000
+#define SYSTEM_CLOCK_96		96000000
 
 /* Use the reference value of 96MHz if not explicitly set by the board */
 #ifndef I2C_IP_CLK
@@ -158,4 +190,4 @@
 #define I2C_PSC_MAX		0x0f
 #define I2C_PSC_MIN		0x00
 
-#endif /* _OMAP24XX_I2C_H_ */
+#endif /* _I2C_H_ */
