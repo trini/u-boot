@@ -26,6 +26,8 @@
 #define I2C_BUS_MAX	3
 #define I2C_DEFAULT_BASE	I2C_BASE1
 
+#define I2C_BUS_MAX	3
+
 #define I2C_REV		(I2C_DEFAULT_BASE + 0x00)
 #define I2C_IE 		(I2C_DEFAULT_BASE + 0x04)
 #define I2C_STAT	(I2C_DEFAULT_BASE + 0x08)
