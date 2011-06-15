@@ -869,14 +869,21 @@ tx25_config	: unconfig
 	@$(MKCONFIG) $@ arm arm926ejs tx25 karo mx25
 
 
-am335x_evm_config:             unconfig
+am335x_evm_config	\
+am335x_evm_min_uart:	unconfig
 	@mkdir -p $(obj)include
 	@echo "#define CONFIG_AM335X"   >>$(obj)include/config.h
 	@echo "#define CONFIG_TI81XX"   >>$(obj)include/config.h
 	@echo "#define CONFIG_SYS_NO_FLASH"    >>$(obj)include/config.h ;
 	@echo "CONFIG_SYS_TEXT_BASE = 0x80700000" >> $(obj)board/ti/am335x/config.tmp;
-	@echo "TI_IMAGE = am335x_u-boot" >> $(obj)board/ti/am335x/config.tmp;
-	@echo "#define CONFIG_TI_DUMMY_HEADER"  >>$(obj)include/config.h;
+	@if [ "$(findstring _min_,$@)" ] ; then \
+		echo "#define CONFIG_AM335X_MIN_CONFIG"    >>$(obj)include/config.h ; \
+		echo "Setting up AM335X minimal build for 1st stage..." ; \
+		echo "TI_IMAGE = u-boot.min.uart" >> $(obj)board/ti/am335x/config.tmp;\
+	else \
+		echo "TI_IMAGE = DUMMY" >> $(obj)board/ti/am335x/config.tmp;\
+	fi;
+	@echo "#define CONFIG_TI_DUMMY_HEADER"	>>$(obj)include/config.h;
 	@$(MKCONFIG) -a am335x_evm arm armv7 am335x ti ti81xx
 
 ti8148_evm_config	\
