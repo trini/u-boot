@@ -42,6 +42,9 @@
 #define EMAC_MDIO_BASE_ADDR            0x5C030000
 #define EMAC_HW_RAM_ADDR               0x01E20000
 
+#define EMAC_MACADDR_LSB	       0x48002380
+#define EMAC_MACADDR_MSB	       0x48002384
+
 #define EMAC_MDIO_BUS_FREQ             166000000       /* 166 MHZ check */
 #define EMAC_MDIO_CLOCK_FREQ           1000000         /* 2.0 MHz */
 
