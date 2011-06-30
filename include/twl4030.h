@@ -509,6 +509,9 @@ static inline int twl4030_i2c_read_u8(u8 chip_no, u8 *val, u8 reg)
  * Power
  */
 
+/*For setting VDD1  */
+void twl4030_power_mpu_init(void);
+
 /* For hardware resetting */
 void twl4030_power_reset_init(void);
 /* For setting device group and voltage */

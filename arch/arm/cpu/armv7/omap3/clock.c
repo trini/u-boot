@@ -35,6 +35,21 @@
 #include <command.h>
 
 /******************************************************************************
+ * Setting the Clock speed 
+ *
+ *****************************************************************************/
+void set_mpu_clk(int speed)
+{
+	struct prcm *prcm_base = (struct prcm *)PRCM_BASE;
+
+
+	/* Set M */
+	sr32(&prcm_base->clksel1_pll_mpu, 8, 11, speed);
+	/* lock mode */
+	sr32(&prcm_base->clken_pll_mpu, 0, 3, PLL_LOCK);
+}
+
+/******************************************************************************
  * get_sys_clk_speed() - determine reference oscillator speed
  *                       based on known 32kHz clock and gptimer.
  *****************************************************************************/

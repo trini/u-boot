@@ -95,6 +95,18 @@ void twl4030_power_init(void)
 				TWL4030_PM_RECEIVER_DEV_GRP_P1);
 }
 
+#define VDD1_VSEL_135	0x3C
+
+void twl4030_power_mpu_init(void)
+{
+        unsigned char byte;
+
+        /* 1.4 Volts */
+        byte = VDD1_VSEL_135;
+        twl4030_i2c_write_u8(TWL4030_CHIP_PM_RECEIVER, byte,
+                             TWL4030_PM_RECEIVER_VDD1_VSEL);
+}
+
 void twl4030_power_mmc_init(void)
 {
 	/* Set VMMC1 to 3 Volts */

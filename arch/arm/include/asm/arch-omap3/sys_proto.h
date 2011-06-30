@@ -35,6 +35,8 @@ struct emu_hal_params {
 void prcm_init(void);
 void per_clocks_enable(void);
 
+void set_mpu_clk(int speed);
+
 void memif_init(void);
 void sdrc_init(void);
 void do_sdrc_init(u32, u32);
