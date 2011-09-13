@@ -54,6 +54,44 @@ enum {
 #define SDP_SDRC_DLLAB_CTRL	((DLL_ENADLL << 3) | \
 				(DLL_LOCKDLL << 2) | (DLL_DLLPHASE_90 << 1))
 
+/* Hynix part of AM/DM37xEVM (200MHz optimized)
+ *   ACTIMA
+ *	TDAL		= 6
+ *	TDPL (Twr)	= 3
+ *	TRRD		= 2
+ *	TRCD		= 4
+ *	TRP		= 3
+ *	TRAS		= 8
+ *	TRC		= 11
+ *	TRFC		= 18
+ *   ACTIMB
+ *	TWTR		= 2
+ *	TCKE		= 1
+ *	TXP		= 1
+ *	TXSR		= 28
+ */
+#define HYNIX_TDAL_200		6
+#define HYNIX_TDPL_200		3
+#define HYNIX_TRRD_200		2
+#define HYNIX_TRCD_200		4
+#define HYNIX_TRP_200		3
+#define HYNIX_TRAS_200		8
+#define HYNIX_TRC_200		11
+#define HYNIX_TRFC_200		18
+#define HYNIX_V_ACTIMA_200	((HYNIX_TRFC_200 << 27) | \
+		(HYNIX_TRC_200 << 22) | (HYNIX_TRAS_200 << 18) | \
+		(HYNIX_TRP_200 << 15) |  (HYNIX_TRCD_200 << 12) | \
+		(HYNIX_TRRD_200 << 9) |  (HYNIX_TDPL_200 << 6) | \
+		(HYNIX_TDAL_200))
+
+#define HYNIX_TWTR_200		2
+#define HYNIX_TCKE_200		1
+#define HYNIX_TXP_200		1
+#define HYNIX_XSR_200		28
+#define HYNIX_V_ACTIMB_200	(((HYNIX_TCKE_200 << 12) | \
+		(HYNIX_XSR_200 << 0)) |	(HYNIX_TXP_200 << 8) | \
+		(HYNIX_TWTR_200 << 16))
+
 /* Infineon part of 3430SDP (165MHz optimized) 6.06ns
  *   ACTIMA
  *	TDAL = Twr/Tck + Trp/tck = 15/6 + 18/6 = 2.5 + 3 = 5.5 -> 6

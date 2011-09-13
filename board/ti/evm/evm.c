@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2004-2008
+ * (C) Copyright 2004-2011
  * Texas Instruments, <www.ti.com>
  *
  * Author :
@@ -119,6 +119,122 @@ int board_init(void)
 	return 0;
 }
 
+/* The only way we can tell what kind of DDR we have is to see what NAND chip
+ * we are using.  We look at the vendor of the NAND chip to see if we have a
+ * Hynix part or not.  This is how we determine which set of DDR timings to
+ * use.
+ */
+#define HYNIX4GiB_NAND_MFR	0xAD 
+
+#define NAND_CMD_STATUS		0x70
+#define NAND_CMD_READID		0x90
+#define NAND_CMD_RESET		0xff
+
+#define GPMC_NAND_COMMAND_0      (OMAP34XX_GPMC_BASE+0x7C)
+#define GPMC_NAND_ADDRESS_0      (OMAP34XX_GPMC_BASE+0x80)
+#define GPMC_NAND_DATA_0	 (OMAP34XX_GPMC_BASE+0x84)
+
+#define WRITE_NAND_COMMAND(d, adr) \
+	do {*(volatile u16 *)GPMC_NAND_COMMAND_0 = d;} while(0)
+#define WRITE_NAND_ADDRESS(d, adr) \
+	do {*(volatile u16 *)GPMC_NAND_ADDRESS_0 = d;} while(0)
+#define READ_NAND(adr) \
+	(*(volatile u16 *)GPMC_NAND_DATA_0)
+
+/* nand_command: Send a flash command to the flash chip */
+static void nand_command(unsigned char command)
+{
+ 	WRITE_NAND_COMMAND(command, NAND_ADDR);
+
+  	if (command == NAND_CMD_RESET) {
+		unsigned char ret_val;
+		nand_command(NAND_CMD_STATUS);
+		do {
+			ret_val = READ_NAND(NAND_ADDR);/* wait till ready */
+  		} while ((ret_val & 0x40) != 0x40);
+ 	}
+}
+
+static int is_hynix_memory(void)
+{
+ 	nand_command(NAND_CMD_RESET);
+ 	nand_command(NAND_CMD_READID);
+
+	WRITE_NAND_ADDRESS(0x0, NAND_ADDR);
+
+ 	if (READ_NAND(NAND_ADDR) == HYNIX4GiB_NAND_MFR)
+		return 1;
+
+	return 0;
+}
+
+/* 
+ * Routine: board_early_sdrc_init
+ * Description: If we use SPL then there is no x-loader nor config header
+ * so we have to setup the DDR timings outself on both banks.
+ */
+void board_early_sdrc_init(struct sdrc *sdrc_base, struct sdrc_actim *sdrc_actim_base0)
+{
+	/* We pick from hard coded values for the MCFG register as these
+	 * come from x-loader which says they come from the vendor and
+	 * these disagree with how the TRM says to calculate them.
+	 */
+	unsigned int val_mcfg, val_actim_ctrla, val_actim_ctrlb;
+	struct sdrc_actim *sdrc_actim_base1 = (struct sdrc_actim *)SDRC_ACTIM_CTRL1_BASE;
+
+	/* If we are OMAP36XX and Hynix we have one set of timings,
+	 * otherwise it's the Micron timings.  Both share the same
+	 * value for RFR_CTRL and MR.
+	 */
+	if (get_cpu_family() == CPU_OMAP36XX && is_hynix_memory()) {
+		val_mcfg = 0x03588099;
+		val_actim_ctrla = HYNIX_V_ACTIMA_200;
+		val_actim_ctrlb = HYNIX_V_ACTIMB_200;
+	} else {
+		val_mcfg = 0x02584099;
+		val_actim_ctrla = MICRON_V_ACTIMA_165;
+		val_actim_ctrlb = MICRON_V_ACTIMB_165;
+	}
+
+	/* SDRC_MCFG0 register */
+	writel(val_mcfg, &sdrc_base->cs[CS0].mcfg);
+
+	/* SDRC_ACTIM_CTRLA0 register */
+	writel(val_actim_ctrla, &sdrc_actim_base0->ctrla);
+	/* SDRC_ACTIM_CTRLB0 register */
+	writel(val_actim_ctrlb, &sdrc_actim_base0->ctrlb);
+
+	/* Both parts use this value. */
+	writel(MICRON_V_RFR_CTRL_165, &sdrc_base->cs[CS0].rfr_ctrl);
+
+	/* SDRC_Manual command register */
+	writel(CMD_NOP, &sdrc_base->cs[CS0].manual);
+	/* supposed to be 100us per design spec for mddr/msdr */
+	sdelay(5000);
+	writel(CMD_PRECHARGE, &sdrc_base->cs[CS0].manual);
+	writel(CMD_AUTOREFRESH, &sdrc_base->cs[CS0].manual);
+	writel(CMD_AUTOREFRESH, &sdrc_base->cs[CS0].manual);
+
+	/* SDRC MR0 register */
+	writel(MICRON_V_MR, &sdrc_base->cs[CS0].mr);
+
+	make_cs1_contiguous();
+
+	writel(val_mcfg, &sdrc_base->cs[CS1].mcfg);
+	writel(val_actim_ctrla, &sdrc_actim_base1->ctrla);
+	writel(val_actim_ctrlb, &sdrc_actim_base1->ctrlb);
+	writel(MICRON_V_RFR_CTRL_165, &sdrc_base->cs[CS1].rfr_ctrl);
+
+	/* init sequence for mDDR/mSDR using manual commands */
+	writel(CMD_NOP, &sdrc_base->cs[CS1].manual);
+	/* supposed to be 100us per design spec for mddr/msdr */
+	sdelay(5000);
+	writel(CMD_PRECHARGE, &sdrc_base->cs[CS1].manual);
+	writel(CMD_AUTOREFRESH, &sdrc_base->cs[CS1].manual);
+	writel(CMD_AUTOREFRESH, &sdrc_base->cs[CS1].manual);
+	writel(MICRON_V_MR, &sdrc_base->cs[CS1].mr);
+}
+
 /*
  * Routine: misc_init_r
  * Description: Init ethernet (done here so udelay works)
@@ -223,7 +339,7 @@ int board_eth_init(bd_t *bis)
 }
 #endif /* CONFIG_CMD_NET */
 
-#ifdef CONFIG_GENERIC_MMC
+#if defined(CONFIG_GENERIC_MMC) && !defined(CONFIG_SPL_BUILD)
 int board_mmc_init(bd_t *bis)
 {
 	omap_mmc_init(0);
