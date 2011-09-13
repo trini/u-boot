@@ -193,6 +193,30 @@ enum {
 #define MICRON_V_MR ((MICRON_WBST << 9) | (MICRON_CASL << 4) | \
 	(MICRON_SIL << 3) | (MICRON_BL))
 
+
+/* Micron part (200MHz optimized) 5 ns
+  */
+#define MICRON_TDAL_200   6
+#define MICRON_TDPL_200   3
+#define MICRON_TRRD_200   2
+#define MICRON_TRCD_200   3
+#define MICRON_TRP_200    3
+#define MICRON_TRAS_200   8
+#define MICRON_TRC_200   11
+#define MICRON_TRFC_200  15
+#define MICRON_V_ACTIMA_200 ((MICRON_TRFC_200 << 27) | (MICRON_TRC_200 << 22) | (MICRON_TRAS_200 << 18) \
+		| (MICRON_TRP_200 << 15) | (MICRON_TRCD_200 << 12) |(MICRON_TRRD_200 << 9) | \
+		(MICRON_TDPL_200 << 6) | (MICRON_TDAL_200))
+
+#define MICRON_TWTR_200   2
+#define MICRON_TCKE_200   4
+#define MICRON_TXP_200    2
+#define MICRON_XSR_200   23
+#define MICRON_V_ACTIMB_200 ((MICRON_TCKE_200 << 12) | (MICRON_XSR_200 << 0)) | \
+				(MICRON_TXP_200 << 8) | (MICRON_TWTR_200 << 16)
+#define MICRON_ARCV_200		0x5e6
+#define MICRON_V_RFR_CTRL_200	((MICRON_ARCV_200 << 8) | (MICRON_ARE))
+
 /*
  * NUMONYX part of IGEP v2 (165MHz optimized) 6.06ns
  *   ACTIMA

@@ -37,6 +37,7 @@
 #include <asm/io.h>
 #include <asm/arch/mmc_host_def.h>
 #include <asm/arch/mux.h>
+#include <asm/arch/mem.h>
 #include <asm/arch/sys_proto.h>
 #include <asm/gpio.h>
 #include <asm/mach-types.h>
@@ -83,25 +84,6 @@ static struct {
 } expansion_config;
 
 /*
- * Routine: board_init
- * Description: Early hardware init.
- */
-int board_init(void)
-{
-	gpmc_init(); /* in SRAM or SDRAM, finish GPMC */
-	/* board id for Linux */
-	gd->bd->bi_arch_number = MACH_TYPE_OMAP3_BEAGLE;
-	/* boot param addr */
-	gd->bd->bi_boot_params = (OMAP34XX_SDRC_CS0 + 0x100);
-
-#if defined(CONFIG_STATUS_LED) && defined(STATUS_LED_BOOT)
-	status_led_set (STATUS_LED_BOOT, STATUS_LED_ON);
-#endif
-
-	return 0;
-}
-
-/*
  * Routine: get_board_revision
  * Description: Detect if we are running on a Beagle revision Ax/Bx,
  *		C1/2/3, C4 or xM. This can be done by reading
@@ -137,6 +119,72 @@ int get_board_revision(void)
 	}
 
 	return revision;
+}
+
+/*
+ * Routine: board_init
+ * Description: Early hardware init.
+ */
+int board_init(void)
+{
+	gpmc_init(); /* in SRAM or SDRAM, finish GPMC */
+	/* board id for Linux */
+	gd->bd->bi_arch_number = MACH_TYPE_OMAP3_BEAGLE;
+	/* boot param addr */
+	gd->bd->bi_boot_params = (OMAP34XX_SDRC_CS0 + 0x100);
+
+#if defined(CONFIG_STATUS_LED) && defined(STATUS_LED_BOOT)
+	status_led_set (STATUS_LED_BOOT, STATUS_LED_ON);
+#endif
+
+	return 0;
+}
+
+/* 
+ * Routine: board_early_sdrc_init
+ * Description: If we use SPL then there is no x-loader nor config header
+ * so we have to setup the DDR timings outself on the first bank.
+ */
+void board_early_sdrc_init(struct sdrc *sdrc_base, struct sdrc_actim *sdrc_actim_base0)
+{
+	/* We have magic hard coded values here for V_MCFG which come from
+	 * x-loader as they do not match how the OMAP35x TRM says to
+	 * calculate them values. */
+	switch (get_board_revision()) {
+	case REVISION_AXBX:
+	case REVISION_CX:
+	case REVISION_C4:
+		/* General SDRC config */
+		writel(0x1, &sdrc_base->cs_cfg); /* 128MiB / bank */
+		writel(0x02584099, &sdrc_base->cs[CS0].mcfg);
+		writel(MICRON_V_RFR_CTRL_165, &sdrc_base->cs[CS0].rfr_ctrl);
+
+		/* AC timings */
+		writel(MICRON_V_ACTIMA_165, &sdrc_actim_base0->ctrla);
+		writel(MICRON_V_ACTIMB_165, &sdrc_actim_base0->ctrlb);
+		break;
+	case REVISION_XM_A:
+	case REVISION_XM_B:
+	case REVISION_XM_C:
+	default:
+		/* General SDRC config */
+		writel(0x2, &sdrc_base->cs_cfg); /* 256MiB / bank */
+		writel(0x03588099, &sdrc_base->cs[CS0].mcfg);
+		writel(MICRON_V_RFR_CTRL_200, &sdrc_base->cs[CS0].rfr_ctrl);
+
+		/* AC timings */
+		writel(MICRON_V_ACTIMA_200, &sdrc_actim_base0->ctrla);
+		writel(MICRON_V_ACTIMB_200, &sdrc_actim_base0->ctrlb);
+		break;
+	}
+
+	/* Initialize */
+	writel(CMD_NOP, &sdrc_base->cs[CS0].manual);
+	writel(CMD_PRECHARGE, &sdrc_base->cs[CS0].manual);
+	writel(CMD_AUTOREFRESH, &sdrc_base->cs[CS0].manual);
+	writel(CMD_AUTOREFRESH, &sdrc_base->cs[CS0].manual);
+
+	writel(MICRON_V_MR, &sdrc_base->cs[CS0].mr);
 }
 
 /*
@@ -371,7 +419,7 @@ void set_muxconf_regs(void)
 	MUX_BEAGLE();
 }
 
-#ifdef CONFIG_GENERIC_MMC
+#if defined(CONFIG_GENERIC_MMC) && !defined(CONFIG_SPL_BUILD)
 int board_mmc_init(bd_t *bis)
 {
 	omap_mmc_init(0);
@@ -480,6 +528,7 @@ int ehci_hcd_init(void)
 
 #endif /* CONFIG_USB_EHCI */
 
+#ifndef CONFIG_SPL_BUILD
 /*
  * This command returns the status of the user button on beagle xM
  * Input - none
@@ -534,3 +583,4 @@ U_BOOT_CMD(
 	"Return the status of the BeagleBoard USER button",
 	""
 );
+#endif
