@@ -138,3 +138,27 @@ int board_eth_init(bd_t *bis)
 	return dm9000_initialize(bis);
 }
 #endif
+
+/* 
+ * Routine: board_early_sdrc_init
+ * Description: If we use SPL then there is no x-loader nor config header
+ * so we have to setup the DDR timings outself on the first bank.
+ */
+void board_early_sdrc_init(struct sdrc *sdrc_base, struct sdrc_actim *sdrc_actim_base0)
+{
+	/* General SDRC config */
+	writel(MICRON_V_MCFG_165, &sdrc_base->cs[CS0].mcfg);
+	writel(MICRON_V_RFR_CTRL_165, &sdrc_base->cs[CS0].rfr_ctrl);
+
+	/* AC timings */
+	writel(MICRON_V_ACTIMA_165, &sdrc_actim_base0->ctrla);
+	writel(MICRON_V_ACTIMB_165, &sdrc_actim_base0->ctrlb);
+
+	/* Initialize */
+	writel(CMD_NOP, &sdrc_base->cs[CS0].manual);
+	writel(CMD_PRECHARGE, &sdrc_base->cs[CS0].manual);
+	writel(CMD_AUTOREFRESH, &sdrc_base->cs[CS0].manual);
+	writel(CMD_AUTOREFRESH, &sdrc_base->cs[CS0].manual);
+
+	writel(MICRON_V_MR, &sdrc_base->cs[CS0].mr);
+}

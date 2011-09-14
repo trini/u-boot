@@ -138,15 +138,15 @@ enum {
 #define MICRON_CASWIDTH			0x5
 #define MICRON_RASWIDTH			0x2
 #define MICRON_LOCKSTATUS		0x0
-#define MICRON_V_MCFG ((MICRON_LOCKSTATUS << 30) | (MICRON_RASWIDTH << 24) | \
-	(MICRON_CASWIDTH << 20) | (MICRON_ADDRMUXLEGACY << 19) | \
-	(MICRON_RAMSIZE << 8) | (MICRON_BANKALLOCATION << 6) | \
-	(MICRON_B32NOT16 << 4) | (MICRON_DEEPPD << 3) | \
-	(MICRON_DDRTYPE << 2) | (MICRON_RAMTYPE))
+#define MICRON_V_MCFG_165 		((MICRON_LOCKSTATUS << 30) | \
+	(MICRON_RASWIDTH << 24) | (MICRON_CASWIDTH << 20) | \
+	(MICRON_ADDRMUXLEGACY << 19) | (MICRON_RAMSIZE << 8) | \
+	(MICRON_BANKALLOCATION << 6) | (MICRON_B32NOT16 << 4) | \
+	(MICRON_DEEPPD << 3) | (MICRON_DDRTYPE << 2) | (MICRON_RAMTYPE))
 
-#define MICRON_ARCV				2030
-#define MICRON_ARE				0x1
-#define MICRON_V_RFR_CTRL ((MICRON_ARCV << 8) | (MICRON_ARE))
+#define MICRON_ARCV_165		0x4e2
+#define MICRON_ARE		0x1
+#define MICRON_V_RFR_CTRL_165	((MICRON_ARCV_165 << 8) | (MICRON_ARE))
 
 #define MICRON_BL				0x2
 #define MICRON_SIL				0x0
@@ -193,32 +193,6 @@ enum {
 #define NUMONYX_V_ACTIMB_165 ((NUMONYX_TCKE_165 << 12) | \
 		(NUMONYX_XSR_165 << 0) | (NUMONYX_TXP_165 << 8) | \
 		(NUMONYX_TWTR_165 << 16))
-
-#ifdef CONFIG_OMAP3_INFINEON_DDR
-#define V_ACTIMA_165 INFINEON_V_ACTIMA_165
-#define V_ACTIMB_165 INFINEON_V_ACTIMB_165
-#endif
-
-#ifdef CONFIG_OMAP3_MICRON_DDR
-#define V_ACTIMA_165 MICRON_V_ACTIMA_165
-#define V_ACTIMB_165 MICRON_V_ACTIMB_165
-#define V_MCFG			MICRON_V_MCFG
-#define V_RFR_CTRL		MICRON_V_RFR_CTRL
-#define V_MR			MICRON_V_MR
-#endif
-
-#ifdef CONFIG_OMAP3_NUMONYX_DDR
-#define V_ACTIMA_165 NUMONYX_V_ACTIMA_165
-#define V_ACTIMB_165 NUMONYX_V_ACTIMB_165
-#endif
-
-#if !defined(V_ACTIMA_165) || !defined(V_ACTIMB_165)
-#error "Please choose the right DDR type in config header"
-#endif
-
-#if defined(CONFIG_SPL_BUILD) && (!defined(V_MCFG) || !defined(V_RFR_CTRL))
-#error "Please choose the right DDR type in config header"
-#endif
 
 /*
  * GPMC settings -

@@ -38,6 +38,7 @@ void per_clocks_enable(void);
 void memif_init(void);
 void sdrc_init(void);
 void do_sdrc_init(u32, u32);
+void board_early_sdrc_init(struct sdrc *, struct sdrc_actim *);
 void emif4_init(void);
 void gpmc_init(void);
 void enable_gpmc_cs_config(const u32 *gpmc_config, struct gpmc_cs *cs, u32 base,
