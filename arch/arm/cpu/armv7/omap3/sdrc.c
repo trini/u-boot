@@ -111,13 +111,21 @@ u32 get_sdr_cs_offset(u32 cs)
 /*
  * do_sdrc_init -
  *  - Initialize the SDRAM for use.
- *  - code called once in C-Stack only context for CS0 and a possible 2nd
- *    time depending on memory configuration from stack+global context
+ *  - Code called once in C-Stack only context for CS0 and with early being
+ *    true and a possible 2nd time depending on memory configuration from
+ *    stack+global context.
  */
 void do_sdrc_init(u32 cs, u32 early)
 {
-	struct sdrc_actim *sdrc_actim_base0, *sdrc_actim_base1;
+	struct sdrc_actim *sdrc_actim_base0 = (struct sdrc_actim *)SDRC_ACTIM_CTRL0_BASE;
+	struct sdrc_actim *sdrc_actim_base1 = (struct sdrc_actim *)SDRC_ACTIM_CTRL1_BASE;
 
+	/*
+	 * When called in the early context this may be SPL and we will
+	 * need to set all of the timings.  This ends up being board
+	 * specific so we call a helper function to take care of this
+	 * for us.
+	 */
 	if (early) {
 		/* reset sdrc controller */
 		writel(SOFTRESET, &sdrc_base->sysconfig);
@@ -128,40 +136,18 @@ void do_sdrc_init(u32 cs, u32 early)
 		/* setup sdrc to ball mux */
 		writel(SDRC_SHARING, &sdrc_base->sharing);
 
-		/* Disable Power Down of CKE cuz of 1 CKE on combo part */
+		/* Disable Power Down of CKE because of 1 CKE on combo part */
 		writel(WAKEUPPROC | SRFRONRESET | PAGEPOLICY_HIGH,
 				&sdrc_base->power);
 
 		writel(ENADLL | DLLPHASE_90, &sdrc_base->dlla_ctrl);
 		sdelay(0x20000);
-	}
 
-/* As long as V_MCFG and V_RFR_CTRL is not defined for all OMAP3 boards we need
- * to prevent this to be build in non-SPL build */
 #ifdef CONFIG_SPL_BUILD
-	/* If we use a SPL there is no x-loader nor config header so we have
-	 * to do the job ourselfs
-	 */
-	if (cs == CS0) {
-		sdrc_actim_base0 = (struct sdrc_actim *)SDRC_ACTIM_CTRL0_BASE;
-
-		/* General SDRC config */
-		writel(V_MCFG, &sdrc_base->cs[cs].mcfg);
-		writel(V_RFR_CTRL, &sdrc_base->cs[cs].rfr_ctrl);
-
-		/* AC timings */
-		writel(V_ACTIMA_165, &sdrc_actim_base0->ctrla);
-		writel(V_ACTIMB_165, &sdrc_actim_base0->ctrlb);
-
-		/* Initialize */
-		writel(CMD_NOP, &sdrc_base->cs[cs].manual);
-		writel(CMD_PRECHARGE, &sdrc_base->cs[cs].manual);
-		writel(CMD_AUTOREFRESH, &sdrc_base->cs[cs].manual);
-		writel(CMD_AUTOREFRESH, &sdrc_base->cs[cs].manual);
-
-		writel(V_MR, &sdrc_base->cs[cs].mr);
-	}
+		/* setup timings */
+		board_early_sdrc_init(sdrc_base, sdrc_actim_base0);
 #endif
+	}
 
 	/*
 	 * SDRC timings are set up by x-load or config header
@@ -170,8 +156,6 @@ void do_sdrc_init(u32 cs, u32 early)
 	 * configure CS1 to handle this ommission
 	 */
 	if (cs == CS1) {
-		sdrc_actim_base0 = (struct sdrc_actim *)SDRC_ACTIM_CTRL0_BASE;
-		sdrc_actim_base1 = (struct sdrc_actim *)SDRC_ACTIM_CTRL1_BASE;
 		writel(readl(&sdrc_base->cs[CS0].mcfg),
 			&sdrc_base->cs[CS1].mcfg);
 		writel(readl(&sdrc_base->cs[CS0].rfr_ctrl),
