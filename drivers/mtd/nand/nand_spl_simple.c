@@ -130,7 +130,9 @@ static int nand_is_bad_block(int block)
 	 * Read one byte (or two if it's a 16 bit chip).
 	 */
 	if (this->options & NAND_BUSWIDTH_16) {
-		if (readw(this->IO_ADDR_R) != 0xffff)
+		unsigned int val = readw(this->IO_ADDR_R);
+		debug("bad block check says data is : 0x%08x\n", val);
+		if (val != 0xffff)
 			return 1;
 	} else {
 		if (readb(this->IO_ADDR_R) != 0xff)
@@ -140,6 +142,7 @@ static int nand_is_bad_block(int block)
 	return 0;
 }
 
+static int num_pages_read = 0;
 static int nand_read_page(int block, int page, void *dst)
 {
 	struct nand_chip *this = mtd.priv;
@@ -170,8 +173,13 @@ static int nand_read_page(int block, int page, void *dst)
 	this->read_buf(&mtd, oob_data, CONFIG_SYS_NAND_OOBSIZE);
 
 	/* Pick the ECC bytes out of the oob data */
-	for (i = 0; i < CONFIG_SYS_NAND_ECCTOTAL; i++)
+	debug("ECC info on page %d: ", num_pages_read);
+	for (i = 0; i < CONFIG_SYS_NAND_ECCTOTAL; i++) {
 		ecc_code[i] = oob_data[nand_ecc_pos[i]];
+		debug("%d ", ecc_code[i]);
+	}
+	debug("\n");
+	num_pages_read++;
 
 	eccsteps = CONFIG_SYS_NAND_ECCSTEPS;
 	p = dst;
@@ -192,6 +200,7 @@ int nand_spl_load_image(uint32_t offs, unsigned int size, void *dst)
 	unsigned int block, lastblock;
 	unsigned int page;
 
+	debug(">>nand_spl_load_image\n");
 	/*
 	 * offs has to be aligned to a page address!
 	 */
@@ -201,10 +210,12 @@ int nand_spl_load_image(uint32_t offs, unsigned int size, void *dst)
 
 	while (block <= lastblock) {
 		if (!nand_is_bad_block(block)) {
+			debug("not a bad block\n");
 			/*
 			 * Skip bad blocks
 			 */
 			while (page < CONFIG_SYS_NAND_PAGE_COUNT) {
+				debug("trying to read a page\n");
 				nand_read_page(block, page, dst);
 				dst += CONFIG_SYS_NAND_PAGE_SIZE;
 				page++;
@@ -212,6 +223,7 @@ int nand_spl_load_image(uint32_t offs, unsigned int size, void *dst)
 
 			page = 0;
 		} else {
+			debug("bad block?\n");
 			lastblock++;
 		}
 

@@ -119,6 +119,7 @@ int board_init(void)
 	return 0;
 }
 
+#if 0
 /* The only way we can tell what kind of DDR we have is to see what NAND chip
  * we are using.  We look at the vendor of the NAND chip to see if we have a
  * Hynix part or not.  This is how we determine which set of DDR timings to
@@ -162,11 +163,18 @@ static int is_hynix_memory(void)
 
 	WRITE_NAND_ADDRESS(0x0, NAND_ADDR);
 
- 	if (READ_NAND(NAND_ADDR) == HYNIX4GiB_NAND_MFR)
+ 	if (READ_NAND(NAND_ADDR) == HYNIX4GiB_NAND_MFR) {
+		debug("found hynix\n");
+ 		nand_command(NAND_CMD_RESET);
 		return 1;
+	}
+
+	debug("Didn't find hynix\n");
+ 	nand_command(NAND_CMD_RESET);
 
 	return 0;
 }
+#endif
 
 /* 
  * Routine: board_early_sdrc_init
@@ -186,15 +194,19 @@ void board_early_sdrc_init(struct sdrc *sdrc_base, struct sdrc_actim *sdrc_actim
 	 * otherwise it's the Micron timings.  Both share the same
 	 * value for RFR_CTRL and MR.
 	 */
+#if 0
 	if (get_cpu_family() == CPU_OMAP36XX && is_hynix_memory()) {
+#endif
 		val_mcfg = 0x03588099;
 		val_actim_ctrla = HYNIX_V_ACTIMA_200;
 		val_actim_ctrlb = HYNIX_V_ACTIMB_200;
+#if 0
 	} else {
 		val_mcfg = 0x02584099;
 		val_actim_ctrla = MICRON_V_ACTIMA_165;
 		val_actim_ctrlb = MICRON_V_ACTIMB_165;
 	}
+#endif
 
 	/* SDRC_MCFG0 register */
 	writel(val_mcfg, &sdrc_base->cs[CS0].mcfg);

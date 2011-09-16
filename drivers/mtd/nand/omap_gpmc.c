@@ -81,6 +81,7 @@ static void omap_hwecc_init(struct nand_chip *chip)
 	 * Init ECC Control Register
 	 * Clear all ECC | Enable Reg1
 	 */
+	debug(">>omap_hwecc_init()\n");
 	writel(ECCCLEAR | ECCRESULTREG1, &gpmc_cfg->ecc_control);
 	writel(ECCSIZE1 | ECCSIZE0 | ECCSIZE0SEL, &gpmc_cfg->ecc_size_config);
 }
