@@ -162,6 +162,7 @@ void board_early_sdrc_init(struct sdrc *sdrc_base, struct sdrc_actim *sdrc_actim
 		/* AC timings */
 		writel(MICRON_V_ACTIMA_165, &sdrc_actim_base0->ctrla);
 		writel(MICRON_V_ACTIMB_165, &sdrc_actim_base0->ctrlb);
+		printf(">>board_early_sdrc_init: revC\n");
 		break;
 	case REVISION_XM_A:
 	case REVISION_XM_B:
@@ -175,6 +176,7 @@ void board_early_sdrc_init(struct sdrc *sdrc_base, struct sdrc_actim *sdrc_actim
 		/* AC timings */
 		writel(MICRON_V_ACTIMA_200, &sdrc_actim_base0->ctrla);
 		writel(MICRON_V_ACTIMB_200, &sdrc_actim_base0->ctrlb);
+		printf(">>board_early_sdrc_init: xM\n");
 		break;
 	}
 

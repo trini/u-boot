@@ -121,6 +121,7 @@ static int nand_command(int block, int page, uint32_t offs,
 
 static int nand_is_bad_block(int block)
 {
+#if 0
 	struct nand_chip *this = mtd.priv;
 
 	nand_command(block, 0, CONFIG_SYS_NAND_BAD_BLOCK_POS,
@@ -131,13 +132,14 @@ static int nand_is_bad_block(int block)
 	 */
 	if (this->options & NAND_BUSWIDTH_16) {
 		unsigned int val = readw(this->IO_ADDR_R);
-		debug("bad block check says data is : 0x%08x\n", val);
+		debug("bad block check of 0x%08x says data is : 0x%08x\n", this->IO_ADDR_R, val);
 		if (val != 0xffff)
 			return 1;
 	} else {
 		if (readb(this->IO_ADDR_R) != 0xff)
 			return 1;
 	}
+#endif
 
 	return 0;
 }
@@ -165,18 +167,21 @@ static int nand_read_page(int block, int page, void *dst)
 	ecc_code = ecc_calc + 0x100;
 	oob_data = ecc_calc + 0x200;
 
+	debug("On page %d: ", num_pages_read);
 	for (i = 0; eccsteps; eccsteps--, i += eccbytes, p += eccsize) {
 		this->ecc.hwctl(&mtd, NAND_ECC_READ);
 		this->read_buf(&mtd, p, eccsize);
 		this->ecc.calculate(&mtd, p, &ecc_calc[i]);
+		debug("%08x (calc ecc: %08x) ", &p, ecc_calc[i]);
 	}
+	debug("\n");
 	this->read_buf(&mtd, oob_data, CONFIG_SYS_NAND_OOBSIZE);
 
 	/* Pick the ECC bytes out of the oob data */
-	debug("ECC info on page %d: ", num_pages_read);
+	debug("Stored ECC info on page %d: ", num_pages_read);
 	for (i = 0; i < CONFIG_SYS_NAND_ECCTOTAL; i++) {
 		ecc_code[i] = oob_data[nand_ecc_pos[i]];
-		debug("%d ", ecc_code[i]);
+		debug("%08x ", ecc_code[i]);
 	}
 	debug("\n");
 	num_pages_read++;
