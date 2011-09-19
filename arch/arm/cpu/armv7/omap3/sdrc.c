@@ -126,7 +126,9 @@ void do_sdrc_init(u32 cs, u32 early)
 	 * specific so we call a helper function to take care of this
 	 * for us.
 	 */
+	printf(">>do_sdrc_init: in\n");
 	if (early) {
+		printf(">>do_sdrc_init: early\n");
 		/* reset sdrc controller */
 		writel(SOFTRESET, &sdrc_base->sysconfig);
 		wait_on_value(RESETDONE, RESETDONE, &sdrc_base->status,
@@ -156,6 +158,7 @@ void do_sdrc_init(u32 cs, u32 early)
 	 * configure CS1 to handle this ommission
 	 */
 	if (cs == CS1) {
+		printf(">>do_sdrc_init: cs == CS1\n");
 		writel(readl(&sdrc_base->cs[CS0].mcfg),
 			&sdrc_base->cs[CS1].mcfg);
 		writel(readl(&sdrc_base->cs[CS0].rfr_ctrl),
@@ -179,6 +182,7 @@ void do_sdrc_init(u32 cs, u32 early)
 	 */
 	if (!mem_ok(cs))
 		writel(0, &sdrc_base->cs[cs].mcfg);
+	printf(">>do_sdrc_init: out\n");
 }
 
 /*
