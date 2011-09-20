@@ -81,12 +81,14 @@ u32 mem_ok(u32 cs)
 
 	addr = OMAP34XX_SDRC_CS0 + get_sdr_cs_offset(cs);
 
+	printf("Testing 0x%08x\n", addr);
 	writel(0x0, addr + 0x400);	/* clear pos A */
 	writel(pattern, addr);		/* pattern to pos B */
 	writel(0x0, addr + 4);		/* remove pattern off the bus */
 	val1 = readl(addr + 0x400);	/* get pos A value */
 	val2 = readl(addr);		/* get val2 */
 
+	printf("Test values are 0x%08x (0?) 0x%08x (0x12345678?)\n", val1, val2);
 	if ((val1 != 0) || (val2 != pattern))	/* see if pos A val changed */
 		return 0;
 	else

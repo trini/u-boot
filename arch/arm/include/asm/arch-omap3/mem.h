@@ -37,11 +37,27 @@ enum {
 };
 #endif /* __ASSEMBLY__ */
 
+/* Memory that can be connected to GPMC */
+#define GPMC_NOR            0
+#define GPMC_NAND           1
+#define GPMC_MDOC           2
+#define GPMC_ONENAND        3
+#define MMC_NAND            4
+#define MMC_ONENAND         5
+#define GPMC_NONE           6
+#define GPMC_ONENAND_TRY    7
+
 #define EARLY_INIT	1
 
 /* Slower full frequency range default timings for x32 operation*/
 #define SDRC_SHARING	0x00000100
 #define SDRC_MR_0_SDR	0x00000031
+
+/* optimized timings good for current shipping parts */
+#define SDP_3430_SDRC_RFR_CTRL_100MHz   0x0002da01
+#define SDP_3430_SDRC_RFR_CTRL_133MHz   0x0003de01 /* 7.8us/7.5ns - 50=0x3de */
+#define SDP_3430_SDRC_RFR_CTRL_165MHz   0x0004e201 /* 7.8us/6ns - 50=0x4e2 */
+#define SDP_3430_SDRC_RFR_CTRL_200MHz   0x0005e601 /* 7.8us/5ns - 50=0x5e6 */
 
 #define DLL_OFFSET		0
 #define DLL_WRITEDDRCLKX2DIS	1

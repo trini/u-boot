@@ -34,6 +34,7 @@
 #include <status_led.h>
 #endif
 #include <twl4030.h>
+#include <linux/mtd/nand.h>
 #include <asm/io.h>
 #include <asm/arch/mmc_host_def.h>
 #include <asm/arch/mux.h>
@@ -84,6 +85,25 @@ static struct {
 } expansion_config;
 
 /*
+ * Routine: board_init
+ * Description: Early hardware init.
+ */
+int board_init(void)
+{
+	gpmc_init(); /* in SRAM or SDRAM, finish GPMC */
+	/* board id for Linux */
+	gd->bd->bi_arch_number = MACH_TYPE_OMAP3_BEAGLE;
+	/* boot param addr */
+	gd->bd->bi_boot_params = (OMAP34XX_SDRC_CS0 + 0x100);
+
+#if defined(CONFIG_STATUS_LED) && defined(STATUS_LED_BOOT)
+	status_led_set (STATUS_LED_BOOT, STATUS_LED_ON);
+#endif
+
+	return 0;
+}
+
+/*
  * Routine: get_board_revision
  * Description: Detect if we are running on a Beagle revision Ax/Bx,
  *		C1/2/3, C4 or xM. This can be done by reading
@@ -121,73 +141,202 @@ int get_board_revision(void)
 	return revision;
 }
 
-/*
- * Routine: board_init
- * Description: Early hardware init.
- */
-int board_init(void)
+#ifdef CONFIG_SPL_BUILD
+
+#define MICRON_DDR	0
+#define NUMONYX_MCP	1
+#define MICRON_MCP	2
+
+#define NAND_CMD_STATUS		0x70
+#define NAND_CMD_READID		0x90
+#define NAND_CMD_RESET		0xff
+
+#define GPMC_NAND_COMMAND_0      (OMAP34XX_GPMC_BASE+0x7C)
+#define GPMC_NAND_ADDRESS_0      (OMAP34XX_GPMC_BASE+0x80)
+#define GPMC_NAND_DATA_0	 (OMAP34XX_GPMC_BASE+0x84)
+
+#define WRITE_NAND_COMMAND(d, adr) \
+	do {*(volatile u16 *)GPMC_NAND_COMMAND_0 = d;} while(0)
+#define WRITE_NAND_ADDRESS(d, adr) \
+	do {*(volatile u16 *)GPMC_NAND_ADDRESS_0 = d;} while(0)
+#define READ_NAND(adr)          (*(volatile u16 *)GPMC_NAND_DATA_0)
+
+/* nand_command: Send a flash command to the flash chip */
+static void nand_command(unsigned char command)
 {
-	gpmc_init(); /* in SRAM or SDRAM, finish GPMC */
-	/* board id for Linux */
-	gd->bd->bi_arch_number = MACH_TYPE_OMAP3_BEAGLE;
-	/* boot param addr */
-	gd->bd->bi_boot_params = (OMAP34XX_SDRC_CS0 + 0x100);
+ 	WRITE_NAND_COMMAND(command, NAND_ADDR);
 
-#if defined(CONFIG_STATUS_LED) && defined(STATUS_LED_BOOT)
-	status_led_set (STATUS_LED_BOOT, STATUS_LED_ON);
-#endif
+  	if (command == NAND_CMD_RESET) {
+		unsigned char ret_val;
+		nand_command(NAND_CMD_STATUS);
+		do {
+			ret_val = READ_NAND(NAND_ADDR);/* wait till ready */
+  		} while ((ret_val & 0x40) != 0x40);
+ 	}
+}
 
-	return 0;
+/* 
+ * In order to find out what DDR we have we need to see what NAND we
+ * may have.  This relies on having already initalized GPMC earlier
+ * in the sequence.
+ */
+static void nand_readid(int *mfr, int *id)
+{
+ 	nand_command(NAND_CMD_RESET);
+ 	nand_command(NAND_CMD_READID);
+
+	WRITE_NAND_ADDRESS(0x0, NAND_ADDR);
+
+	/* Read off the manufacturer and device id. */
+	*mfr = READ_NAND(NAND_ADDR);
+	*id = READ_NAND(NAND_ADDR);
+}
+
+#define GPMC_CONFIG_CS0_CONFIG1		0x6E000060
+#define GPMC_CONFIG_CS0_CONFIG2		0x6E000064
+#define GPMC_CONFIG_CS0_CONFIG3		0x6E000068
+#define GPMC_CONFIG_CS0_CONFIG4		0x6E00006C
+#define GPMC_CONFIG_CS0_CONFIG5		0x6E000070
+#define GPMC_CONFIG_CS0_CONFIG6		0x6E000074
+#define GPMC_CONFIG_CS0_CONFIG7		0x6E000078
+#define OMAP34XX_GPMC_CS0_SIZE		0x8
+
+static int identify_xm_ddr()
+{
+	int mfr, id;
+
+	printf(">>identify_xm_ddr\n");
+
+	/* Make sure that we have setup GPMC for NAND correctly. */
+	writel(M_NAND_GPMC_CONFIG1, GPMC_CONFIG_CS0_CONFIG1);
+	writel(M_NAND_GPMC_CONFIG2, GPMC_CONFIG_CS0_CONFIG2);
+	writel(M_NAND_GPMC_CONFIG3, GPMC_CONFIG_CS0_CONFIG3);
+	writel(M_NAND_GPMC_CONFIG4, GPMC_CONFIG_CS0_CONFIG4);
+	writel(M_NAND_GPMC_CONFIG5, GPMC_CONFIG_CS0_CONFIG5);
+	writel(M_NAND_GPMC_CONFIG6, GPMC_CONFIG_CS0_CONFIG6);
+
+	/* Enable the GPMC Mapping */
+	writel((((OMAP34XX_GPMC_CS0_SIZE & 0xF) << 8) |
+			     ((NAND_BASE >> 24) & 0x3F) |
+			     (1 << 6)),  (GPMC_CONFIG_CS0_CONFIG7));
+
+	sdelay(2000);
+
+	printf(">>identify_xm_ddr:calling readid\n");
+	nand_readid(&mfr, &id);
+	if (mfr == 0)
+		return MICRON_DDR;
+	if ((mfr == 0x20) && (id == 0xba))
+		return NUMONYX_MCP;
+	if ((mfr == 0x2c) && (id == 0xbc))
+		return MICRON_MCP;
+
+	/* Unknown. */
+	return -1;
 }
 
 /* 
  * Routine: board_early_sdrc_init
  * Description: If we use SPL then there is no x-loader nor config header
- * so we have to setup the DDR timings outself on the first bank.
+ * so we have to setup the DDR timings outself on both banks.
  */
-void board_early_sdrc_init(struct sdrc *sdrc_base, struct sdrc_actim *sdrc_actim_base0)
+void board_early_sdrc_init(struct sdrc *sdrc_base, struct sdrc_actim *sdrc_actim_base0, struct sdrc_actim *sdrc_actim_base1)
 {
 	/* We have magic hard coded values here for V_MCFG which come from
 	 * x-loader as they do not match how the OMAP35x TRM says to
 	 * calculate them values. */
 	switch (get_board_revision()) {
-	case REVISION_AXBX:
-	case REVISION_CX:
 	case REVISION_C4:
-		/* General SDRC config */
-		writel(0x1, &sdrc_base->cs_cfg); /* 128MiB / bank */
-		writel(0x02584099, &sdrc_base->cs[CS0].mcfg);
-		writel(MICRON_V_RFR_CTRL_165, &sdrc_base->cs[CS0].rfr_ctrl);
-
-		/* AC timings */
-		writel(MICRON_V_ACTIMA_165, &sdrc_actim_base0->ctrla);
-		writel(MICRON_V_ACTIMB_165, &sdrc_actim_base0->ctrlb);
-		printf(">>board_early_sdrc_init: revC\n");
+		if (identify_xm_ddr() == NUMONYX_MCP) {
+			printf(">>board_early_sdrc_init: C4+numonyx\n");
+			writel(0x4, &sdrc_base->cs_cfg); /* 512MB/bank */
+			writel(0x04590099, &sdrc_base->cs[CS0].mcfg);
+			writel(0x04590099, &sdrc_base->cs[CS1].mcfg);
+			writel(NUMONYX_V_ACTIMA_165, &sdrc_actim_base0->ctrla);
+			writel(NUMONYX_V_ACTIMB_165, &sdrc_actim_base0->ctrlb);
+			writel(NUMONYX_V_ACTIMA_165, &sdrc_actim_base1->ctrla);
+			writel(NUMONYX_V_ACTIMB_165, &sdrc_actim_base1->ctrlb);
+			writel(SDP_3430_SDRC_RFR_CTRL_165MHz, &sdrc_base->cs[CS0].rfr_ctrl);
+			writel(SDP_3430_SDRC_RFR_CTRL_165MHz, &sdrc_base->cs[CS1].rfr_ctrl);
+		} else if (identify_xm_ddr() == MICRON_MCP) {
+			printf(">>board_early_sdrc_init: C4+micron\n");
+			/* Beagleboard Rev C5 */
+			writel(0x2, &sdrc_base->cs_cfg); /* 256MB/bank */
+			writel(0x03588099, &sdrc_base->cs[CS0].mcfg);
+			writel(0x03588099, &sdrc_base->cs[CS1].mcfg);
+			writel(MICRON_V_ACTIMA_200, &sdrc_actim_base0->ctrla);
+			writel(MICRON_V_ACTIMB_200, &sdrc_actim_base0->ctrlb);
+			writel(MICRON_V_ACTIMA_200, &sdrc_actim_base1->ctrla);
+			writel(MICRON_V_ACTIMB_200, &sdrc_actim_base1->ctrlb);
+			writel(SDP_3430_SDRC_RFR_CTRL_200MHz, &sdrc_base->cs[CS0].rfr_ctrl);
+			writel(SDP_3430_SDRC_RFR_CTRL_200MHz, &sdrc_base->cs[CS1].rfr_ctrl);
+		} else {
+			printf(">>board_early_sdrc_init: C4+default\n");
+			writel(0x1, &sdrc_base->cs_cfg); /* 128MB/bank */
+			writel(0x02584099, &sdrc_base->cs[CS0].mcfg);
+			writel(0x02584099, &sdrc_base->cs[CS1].mcfg);
+			writel(MICRON_V_ACTIMA_165, &sdrc_actim_base0->ctrla);
+			writel(MICRON_V_ACTIMB_165, &sdrc_actim_base0->ctrlb);
+			writel(MICRON_V_ACTIMA_165, &sdrc_actim_base1->ctrla);
+			writel(MICRON_V_ACTIMB_165, &sdrc_actim_base1->ctrlb);
+			writel(SDP_3430_SDRC_RFR_CTRL_165MHz, &sdrc_base->cs[CS0].rfr_ctrl);
+			writel(SDP_3430_SDRC_RFR_CTRL_165MHz, &sdrc_base->cs[CS1].rfr_ctrl);
+		}
 		break;
 	case REVISION_XM_A:
 	case REVISION_XM_B:
 	case REVISION_XM_C:
-	default:
-		/* General SDRC config */
-		writel(0x2, &sdrc_base->cs_cfg); /* 256MiB / bank */
-		writel(0x03588099, &sdrc_base->cs[CS0].mcfg);
-		writel(MICRON_V_RFR_CTRL_200, &sdrc_base->cs[CS0].rfr_ctrl);
-
-		/* AC timings */
-		writel(MICRON_V_ACTIMA_200, &sdrc_actim_base0->ctrla);
-		writel(MICRON_V_ACTIMB_200, &sdrc_actim_base0->ctrlb);
-		printf(">>board_early_sdrc_init: xM\n");
+		if (identify_xm_ddr() == MICRON_DDR) {
+			printf(">>board_early_sdrc_init: XM+micron\n");
+			writel(0x2, &sdrc_base->cs_cfg); /* 256MB/bank */
+			writel(0x03588099, &sdrc_base->cs[CS0].mcfg);
+			writel(0x03588099, &sdrc_base->cs[CS1].mcfg);
+			writel(MICRON_V_ACTIMA_200, &sdrc_actim_base0->ctrla);
+			writel(MICRON_V_ACTIMB_200, &sdrc_actim_base0->ctrlb);
+			writel(MICRON_V_ACTIMA_200, &sdrc_actim_base1->ctrla);
+			writel(MICRON_V_ACTIMB_200, &sdrc_actim_base1->ctrlb);
+			writel(SDP_3430_SDRC_RFR_CTRL_200MHz, &sdrc_base->cs[CS0].rfr_ctrl);
+			writel(SDP_3430_SDRC_RFR_CTRL_200MHz, &sdrc_base->cs[CS1].rfr_ctrl);
+		} else {
+			printf(">>board_early_sdrc_init: xM+default\n");
+			writel(0x4, &sdrc_base->cs_cfg); /* 512MB/bank */
+			writel(0x04590099, &sdrc_base->cs[CS0].mcfg);
+			writel(0x04590099, &sdrc_base->cs[CS1].mcfg);
+			writel(NUMONYX_V_ACTIMA_165, &sdrc_actim_base0->ctrla);
+			writel(NUMONYX_V_ACTIMB_165, &sdrc_actim_base0->ctrlb);
+			writel(NUMONYX_V_ACTIMA_165, &sdrc_actim_base1->ctrla);
+			writel(NUMONYX_V_ACTIMB_165, &sdrc_actim_base1->ctrlb);
+			writel(SDP_3430_SDRC_RFR_CTRL_165MHz, &sdrc_base->cs[CS0].rfr_ctrl);
+			writel(SDP_3430_SDRC_RFR_CTRL_165MHz, &sdrc_base->cs[CS1].rfr_ctrl);
+		}
 		break;
+	default:
+		printf(">>board_early_sdrc_init: default\n");
+		writel(0x1, &sdrc_base->cs_cfg); /* 128MB/bank */
+		writel(0x02584099, &sdrc_base->cs[CS0].mcfg);
+		writel(0x02584099, &sdrc_base->cs[CS1].mcfg);
+		writel(MICRON_V_ACTIMA_165, &sdrc_actim_base0->ctrla);
+		writel(MICRON_V_ACTIMB_165, &sdrc_actim_base0->ctrlb);
+		writel(MICRON_V_ACTIMA_165, &sdrc_actim_base1->ctrla);
+		writel(MICRON_V_ACTIMB_165, &sdrc_actim_base1->ctrlb);
+		writel(SDP_3430_SDRC_RFR_CTRL_165MHz, &sdrc_base->cs[CS0].rfr_ctrl);
+		writel(SDP_3430_SDRC_RFR_CTRL_165MHz, &sdrc_base->cs[CS1].rfr_ctrl);
 	}
 
 	/* Initialize */
 	writel(CMD_NOP, &sdrc_base->cs[CS0].manual);
+	writel(CMD_NOP, &sdrc_base->cs[CS1].manual);
 	writel(CMD_PRECHARGE, &sdrc_base->cs[CS0].manual);
+	writel(CMD_PRECHARGE, &sdrc_base->cs[CS1].manual);
 	writel(CMD_AUTOREFRESH, &sdrc_base->cs[CS0].manual);
 	writel(CMD_AUTOREFRESH, &sdrc_base->cs[CS0].manual);
+	writel(CMD_AUTOREFRESH, &sdrc_base->cs[CS1].manual);
+	writel(CMD_AUTOREFRESH, &sdrc_base->cs[CS1].manual);
 
 	writel(MICRON_V_MR, &sdrc_base->cs[CS0].mr);
+	writel(MICRON_V_MR, &sdrc_base->cs[CS1].mr);
 }
+#endif
 
 /*
  * Routine: get_expansion_id

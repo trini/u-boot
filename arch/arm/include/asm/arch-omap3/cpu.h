@@ -31,6 +31,8 @@
 
 /* Register offsets of common modules */
 /* Control */
+#define CONTROL_STATUS		(OMAP34XX_CTRL_BASE + 0x2F0)
+
 #ifndef __KERNEL_STRICT_NAMES
 #ifndef __ASSEMBLY__
 struct ctrl {
@@ -55,13 +57,7 @@ struct ctrl {
 	u8 res5[0x124];
 	u32 ctrl_omap_stat;	/* 0x44C */
 };
-#else /* __ASSEMBLY__ */
-#define CONTROL_STATUS		0x2F0
-#endif /* __ASSEMBLY__ */
-#endif /* __KERNEL_STRICT_NAMES */
 
-#ifndef __KERNEL_STRICT_NAMES
-#ifndef __ASSEMBLY__
 struct ctrl_id {
 	u8 res1[0x4];
 	u32 idcode;		/* 0x04 */
