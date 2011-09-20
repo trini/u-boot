@@ -142,20 +142,21 @@ void do_sdrc_init(u32 cs, u32 early)
 		writel(WAKEUPPROC | SRFRONRESET | PAGEPOLICY_HIGH,
 				&sdrc_base->power);
 
-		writel(ENADLL | DLLPHASE_90, &sdrc_base->dlla_ctrl);
-		sdelay(0x20000);
-
 #ifdef CONFIG_SPL_BUILD
 		/* setup timings */
-		board_early_sdrc_init(sdrc_base, sdrc_actim_base0);
+		board_early_sdrc_init(sdrc_base, sdrc_actim_base0,
+				sdrc_actim_base1);
 #endif
+
+		writel(ENADLL | DLLPHASE_90, &sdrc_base->dlla_ctrl);
+		sdelay(0x20000);
 	}
 
 	/*
-	 * SDRC timings are set up by x-load or config header
-	 * We don't need to redo them here.
-	 * Older x-loads configure only CS0
-	 * configure CS1 to handle this ommission
+	 * If we aren't using SPL we have been loaded by some
+	 * other means which may not have correctly initialized
+	 * both CS0 and CS1 (such as some older versions of x-loader)
+	 * so we may be asked now to setup CS1.
 	 */
 	if (cs == CS1) {
 		printf(">>do_sdrc_init: cs == CS1\n");
@@ -180,8 +181,10 @@ void do_sdrc_init(u32 cs, u32 early)
 	 * Test ram in this bank
 	 * Disable if bad or not present
 	 */
-	if (!mem_ok(cs))
+	if (!mem_ok(cs)) {
+		printf(">>do_sdrc_init: bad mem!\n");
 		writel(0, &sdrc_base->cs[cs].mcfg);
+	}
 	printf(">>do_sdrc_init: out\n");
 }
 
@@ -193,17 +196,22 @@ int dram_init(void)
 {
 	unsigned int size0 = 0, size1 = 0;
 
+	printf(">>dram_init\n");
 	size0 = get_sdr_cs_size(CS0);
+	printf(">>dram_init: size0: 0x%08x\n", size0);
 	/*
 	 * If a second bank of DDR is attached to CS1 this is
-	 * where it can be started.  Early init code will init
-	 * memory on CS0.
+	 * where it can be found.  If we have SPL that code will have
+	 * initalized it already, otherwise early init code will init
+	 * memory on CS0 only.
 	 */
 	if ((sysinfo.mtype == DDR_COMBO) || (sysinfo.mtype == DDR_STACKED)) {
 		do_sdrc_init(CS1, NOT_EARLY);
 		make_cs1_contiguous();
+		printf(">>dram_init: Peeking at cs1\n");
 
 		size1 = get_sdr_cs_size(CS1);
+		printf(">>dram_init: size1: 0x%08x\n", size0);
 	}
 	gd->ram_size = size0 + size1;
 

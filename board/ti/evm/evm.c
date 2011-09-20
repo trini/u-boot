@@ -119,97 +119,77 @@ int board_init(void)
 	return 0;
 }
 
-#if 0
-/* The only way we can tell what kind of DDR we have is to see what NAND chip
- * we are using.  We look at the vendor of the NAND chip to see if we have a
- * Hynix part or not.  This is how we determine which set of DDR timings to
- * use.
+#ifdef CONFIG_SPL_BUILD
+/*
+ * In order to find out what memory timings we need to use we
+ * see what type of memory is connected to the GPMC and we get this
+ * value from looking at the SYS BOOT settings.
  */
-#define HYNIX4GiB_NAND_MFR	0xAD 
-
-#define NAND_CMD_STATUS		0x70
-#define NAND_CMD_READID		0x90
-#define NAND_CMD_RESET		0xff
-
-#define GPMC_NAND_COMMAND_0      (OMAP34XX_GPMC_BASE+0x7C)
-#define GPMC_NAND_ADDRESS_0      (OMAP34XX_GPMC_BASE+0x80)
-#define GPMC_NAND_DATA_0	 (OMAP34XX_GPMC_BASE+0x84)
-
-#define WRITE_NAND_COMMAND(d, adr) \
-	do {*(volatile u16 *)GPMC_NAND_COMMAND_0 = d;} while(0)
-#define WRITE_NAND_ADDRESS(d, adr) \
-	do {*(volatile u16 *)GPMC_NAND_ADDRESS_0 = d;} while(0)
-#define READ_NAND(adr) \
-	(*(volatile u16 *)GPMC_NAND_DATA_0)
-
-/* nand_command: Send a flash command to the flash chip */
-static void nand_command(unsigned char command)
+static u32 get_mem_type(void)
 {
- 	WRITE_NAND_COMMAND(command, NAND_ADDR);
+	int mode = readl(CONTROL_STATUS) & (SYSBOOT_MASK);
+        switch (mode) {
+            case 0:
+            case 2:
+            case 4:
+            case 16:
+            case 22:    return GPMC_ONENAND;
 
-  	if (command == NAND_CMD_RESET) {
-		unsigned char ret_val;
-		nand_command(NAND_CMD_STATUS);
-		do {
-			ret_val = READ_NAND(NAND_ADDR);/* wait till ready */
-  		} while ((ret_val & 0x40) != 0x40);
- 	}
+            case 1:
+            case 12:
+            case 15:
+            case 21:
+            case 27:    return GPMC_NAND;
+
+            case 3:
+            case 6:     return MMC_ONENAND;
+
+            case 8:
+            case 11:
+            case 14:
+            case 20:
+            case 26:    return GPMC_MDOC;
+
+            case 17:
+            case 18:
+            case 24:	return MMC_NAND;
+
+            case 7:
+            case 10:
+            case 13:
+            case 19:
+            case 25:
+            default:    return GPMC_NOR;
+        }
 }
-
-static int is_hynix_memory(void)
-{
- 	nand_command(NAND_CMD_RESET);
- 	nand_command(NAND_CMD_READID);
-
-	WRITE_NAND_ADDRESS(0x0, NAND_ADDR);
-
- 	if (READ_NAND(NAND_ADDR) == HYNIX4GiB_NAND_MFR) {
-		debug("found hynix\n");
- 		nand_command(NAND_CMD_RESET);
-		return 1;
-	}
-
-	debug("Didn't find hynix\n");
- 	nand_command(NAND_CMD_RESET);
-
-	return 0;
-}
-#endif
 
 /* 
  * Routine: board_early_sdrc_init
  * Description: If we use SPL then there is no x-loader nor config header
  * so we have to setup the DDR timings outself on both banks.
  */
-void board_early_sdrc_init(struct sdrc *sdrc_base, struct sdrc_actim *sdrc_actim_base0)
+void board_early_sdrc_init(struct sdrc *sdrc_base, struct sdrc_actim *sdrc_actim_base0, struct sdrc_actim *sdrc_actim_base1)
 {
-	/* We pick from hard coded values for the MCFG register as these
-	 * come from x-loader which says they come from the vendor and
-	 * these disagree with how the TRM says to calculate them.
+	/* We use a hard coded value for the MCFG register as this
+	 * comes from x-loader which we assume to be correct even
+	 * when it disagrees with how the TRM says to calculate it.
 	 */
-	unsigned int val_mcfg, val_actim_ctrla, val_actim_ctrlb;
-	struct sdrc_actim *sdrc_actim_base1 = (struct sdrc_actim *)SDRC_ACTIM_CTRL1_BASE;
+	unsigned int val_actim_ctrla, val_actim_ctrlb;
 
-	/* If we are OMAP36XX and Hynix we have one set of timings,
-	 * otherwise it's the Micron timings.  Both share the same
-	 * value for RFR_CTRL and MR.
-	 */
-#if 0
-	if (get_cpu_family() == CPU_OMAP36XX && is_hynix_memory()) {
-#endif
-		val_mcfg = 0x03588099;
-		val_actim_ctrla = HYNIX_V_ACTIMA_200;
-		val_actim_ctrlb = HYNIX_V_ACTIMB_200;
-#if 0
-	} else {
-		val_mcfg = 0x02584099;
-		val_actim_ctrla = MICRON_V_ACTIMA_165;
-		val_actim_ctrlb = MICRON_V_ACTIMB_165;
+	switch(get_mem_type()) {
+		case GPMC_ONENAND:
+		case MMC_ONENAND:
+			val_actim_ctrla = INFINEON_V_ACTIMA_165;
+			val_actim_ctrlb = INFINEON_V_ACTIMB_165;
+		case GPMC_NAND:
+		case MMC_NAND:
+		default:
+			val_actim_ctrla = MICRON_V_ACTIMA_165;
+			val_actim_ctrlb = MICRON_V_ACTIMB_165;
 	}
-#endif
 
 	/* SDRC_MCFG0 register */
-	writel(val_mcfg, &sdrc_base->cs[CS0].mcfg);
+	writel(0x02584099, &sdrc_base->cs[CS0].mcfg);
 
 	/* SDRC_ACTIM_CTRLA0 register */
 	writel(val_actim_ctrla, &sdrc_actim_base0->ctrla);
@@ -232,7 +212,7 @@ void board_early_sdrc_init(struct sdrc *sdrc_base, struct sdrc_actim *sdrc_actim
 
 	make_cs1_contiguous();
 
-	writel(val_mcfg, &sdrc_base->cs[CS1].mcfg);
+	writel(0x02584099, &sdrc_base->cs[CS1].mcfg);
 	writel(val_actim_ctrla, &sdrc_actim_base1->ctrla);
 	writel(val_actim_ctrlb, &sdrc_actim_base1->ctrlb);
 	writel(MICRON_V_RFR_CTRL_165, &sdrc_base->cs[CS1].rfr_ctrl);
@@ -246,6 +226,7 @@ void board_early_sdrc_init(struct sdrc *sdrc_base, struct sdrc_actim *sdrc_actim
 	writel(CMD_AUTOREFRESH, &sdrc_base->cs[CS1].manual);
 	writel(MICRON_V_MR, &sdrc_base->cs[CS1].mr);
 }
+#endif
 
 /*
  * Routine: misc_init_r
