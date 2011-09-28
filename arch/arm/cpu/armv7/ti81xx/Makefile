@@ -16,14 +16,13 @@
 
 include $(TOPDIR)/config.mk
 
-LIB	= $(obj)lib$(SOC).a
+LIB	= $(obj)lib$(SOC).o
 
 SOBJS	:= lowlevel_init.o
 SOBJS	+= cache.o
 
 COBJS	+= mem.o
 COBJS	+= timer.o
-COBJS	+= syslib.o
 COBJS	+= sys_info.o
 
 COBJS-$(CONFIG_NAND_TI81XX)	+= elm.o
@@ -31,8 +30,8 @@ COBJS-$(CONFIG_NAND_TI81XX)	+= elm.o
 SRCS	:= $(SOBJS:.o=.S) $(COBJS:.o=.c)
 OBJS	:= $(addprefix $(obj),$(COBJS) $(COBJS-y) $(SOBJS))
 
-$(LIB):	$(obj).depend $(OBJS) $(SOBJS)
-	$(AR) $(ARFLAGS) $@ $(OBJS) $(SOBJS)
+$(LIB):	$(OBJS)
+	$(call cmd_link_o_target, $(OBJS))
 
 clean:
 	rm -f $(SOBJS) $(OBJS)

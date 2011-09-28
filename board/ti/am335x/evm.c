@@ -15,6 +15,7 @@
 
 #include <common.h>
 #include <asm/cache.h>
+#include <asm/io.h>
 #include <asm/arch/cpu.h>
 #include <asm/arch/ddr_defs.h>
 #include <asm/arch/hardware.h>
@@ -133,11 +134,16 @@ static volatile int board_id = BASE_BOARD;
 
 int dram_init(void)
 {
+	gd->ram_size = PHYS_DRAM_1_SIZE;
+
+	return 0;
+}
+
+void dram_init_banksize (void)
+{
 	/* Fill up board info */
 	gd->bd->bi_dram[0].start = PHYS_DRAM_1;
 	gd->bd->bi_dram[0].size = PHYS_DRAM_1_SIZE;
-
-	return 0;
 }
 
 int misc_init_r(void)

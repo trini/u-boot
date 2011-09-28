@@ -13,12 +13,14 @@
 #ifndef __CONFIG_AM335X_EVM_H
 #define __CONFIG_AM335X_EVM_H
 
-#define CONFIG_ARMV7
+#define CONFIG_AM335X
+#define CONFIG_TI81XX
+#define CONFIG_SYS_NO_FLASH
+#define CONFIG_SYS_TEXT_BASE		0x80800000
+#define CONFIG_NAND_ENV
 
 #include <asm/arch/cpu.h>		/* get chip and board defs */
 #include <asm/arch/hardware.h>
-
-#define CONFIG_SYS_ARM_WITHOUT_RELOC	1
 
 #define CONFIG_AM335X_HSMMC_INSTANCE	0	/* 0 - MMC0, 1 - MMC1 */
 
@@ -81,7 +83,7 @@
 #define CONFIG_SYS_MALLOC_LEN		(CONFIG_ENV_SIZE + (32 * 1024))
 #define CONFIG_ENV_OVERWRITE
 #define CONFIG_SYS_LONGHELP
-#define CONFIG_SYS_PROMPT		"AM335X_EVM#"
+#define CONFIG_SYS_PROMPT		"AM335X_EVM# "
 /* Use HUSH parser to allow command parsing */
 #define CONFIG_SYS_HUSH_PARSER
 #define CONFIG_SYS_PROMPT_HUSH_PS2	"> "
@@ -113,7 +115,7 @@
 	"nand_root=/dev/mtdblock4 rw\0" \
 	"spi_root=/dev/mtdblock4 rw\0" \
 	"nor_root=/dev/mtdblock3 rw\0" \
-	"mmc_root_fs_type=ext2 rootwait\0" \
+	"mmc_root_fs_type=ext3 rootwait\0" \
 	"nand_root_fs_type=jffs2\0" \
 	"spi_root_fs_type=jffs2\0" \
 	"nor_root_fs_type=jffs2\0" \
@@ -200,8 +202,6 @@
 #endif /* CONFIG_AM335X_MIN_CONFIG */
 
 #define CONFIG_DISPLAY_BOARDINFO
-#define CONFIG_SYS_GBL_DATA_SIZE	128	/* size in bytes reserved for
-						   initial data */
 #define CONFIG_MISC_INIT_R		1
 #define CONFIG_SYS_AUTOLOAD		"yes"
 #define CONFIG_CMD_CACHE
@@ -233,6 +233,13 @@
 #define PHYS_DRAM_1			0x80000000	/* DRAM Bank #1 */
 #define PHYS_DRAM_1_SIZE		0x10000000 /*(0x80000000 / 8) 256 MB */
 
+#define CONFIG_SYS_SDRAM_BASE		PHYS_DRAM_1
+#define CONFIG_SYS_INIT_RAM_ADDR	SRAM0_START
+#define CONFIG_SYS_INIT_RAM_SIZE	SRAM0_SIZE
+#define CONFIG_SYS_INIT_SP_ADDR		(CONFIG_SYS_INIT_RAM_ADDR + \
+					 CONFIG_SYS_INIT_RAM_SIZE - \
+					 GENERATED_GBL_DATA_SIZE)
+
  /* Platform/Board specific defs */
 #define CONFIG_SYS_CLK_FREQ		24000000
 #define CONFIG_SYS_TIMERBASE		0x48040000	/* Use Timer2 */
@@ -259,6 +266,7 @@
 
 #if defined(CONFIG_NO_ETH)
 # undef CONFIG_CMD_NET
+# undef CONFIG_CMD_NFS
 #else
 # define CONFIG_CMD_DHCP
 # define CONFIG_CMD_PING
@@ -392,9 +400,5 @@
 
 /* Unsupported features */
 #undef CONFIG_USE_IRQ
-
-/* additions for new relocation code, must added to all boards */
-#define CONFIG_SYS_SDRAM_BASE		PHYS_DRAM_1
-#define CONFIG_SYS_INIT_SP_ADDR		((SRAM0_START + SRAM0_SIZE - SRAM_GPMC_STACK_SIZE) - CONFIG_SYS_GBL_DATA_SIZE)
 
  #endif	/* ! __CONFIG_AM335X_EVM_H */

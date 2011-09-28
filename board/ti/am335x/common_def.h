@@ -15,11 +15,6 @@
 #ifndef __COMMON_DEF_H__
 #define __COMMON_DEF_H__
 
-#define __raw_readl(a)		(*(volatile unsigned int *)(a))
-#define __raw_writel(v, a)	(*(volatile unsigned int *)(a) = (v))
-#define __raw_readw(a)		(*(volatile unsigned short *)(a))
-#define __raw_writew(v, a)	(*(volatile unsigned short *)(a) = (v))
-
 #ifndef TRUE
 #define TRUE 1
 #endif
