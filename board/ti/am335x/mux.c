@@ -13,6 +13,7 @@
  * GNU General Public License for more details.
  */
 #include <config.h>
+#include <asm/io.h>
 #include "common_def.h"
 #include <asm/arch/hardware.h>
 

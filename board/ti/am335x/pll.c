@@ -13,6 +13,7 @@
  * GNU General Public License for more details.
  */
 #include <common.h>
+#include <asm/io.h>
 #include <asm/arch/cpu.h>
 #include <asm/arch/clock.h>
 #include <asm/arch/hardware.h>
