@@ -39,6 +39,33 @@
 #define TIMER_TCRR			0x3C		/* Timer counter register */
 #define TIMER_TLDR			0x40		/* Timer load value register*/
 
+/* Timer 32 bit registers */
+#ifndef __KERNEL_STRICT_NAMES
+#ifndef __ASSEMBLY__
+struct gptimer {
+	u32 tidr;	/* 0x00 r */
+	u8 res1[0xc];
+	u32 tiocp_cfg;	/* 0x10 rw */
+	u8 res2[0xc];
+	u32 tier;	/* 0x20 rw */
+	u32 tistatr;/* 0x24 r */
+	u32 tistat;	/* 0x28 r */
+	u32 tisr;	/* 0x2c rw */
+	u32 tcicr;	/* 0x30 rw */
+	u32 twer;	/* 0x34 rw */
+	u32 tclr;	/* 0x38 rw - control reg */
+	u32 tcrr;	/* 0x3c rw - counter reg */
+	u32 tldr;	/* 0x40 rw - load reg */
+	u32 ttgr;	/* 0x44 rw */
+	u32 twpc;	/* 0x48 r*/
+	u32 tmar;	/* 0x4c rw*/
+	u32 tcar1;	/* 0x50 r */
+	u32 tscir;	/* 0x54 r */
+	u32 tcar2;	/* 0x58 r */
+};
+#endif /* __ASSEMBLY__ */
+#endif /* __KERNEL_STRICT_NAMES */
+
 /* Timer register bits */
 #define TCLR_ST				BIT(0)		/* Start=1 Stop=0 */
 #define TCLR_AR				BIT(1)		/* Auto reload */
@@ -66,10 +93,12 @@
 
 /* Reset control */
 #ifdef CONFIG_AM335X
-#define PRM_DEVICE_RSTCTRL		(PRCM_BASE + 0x0F00)
+#define PRM_RSTCTRL		(PRCM_BASE + 0x0F00)
 #else
-#define PRM_DEVICE_RSTCTRL		(PRCM_BASE + 0x00A0)
+#define PRM_RSTCTRL		(PRCM_BASE + 0x00A0)
 #endif
+#define PRM_RSTCTRL_RESET	0x01
+
 
 /* TI816X specific bits for PRM_DEVICE module */
 #define GLOBAL_RST_COLD			BIT(1)
@@ -472,6 +501,8 @@
 #define SRAM0_SIZE			(0x1B400) /* 109 KB */
 #define SRAM_GPMC_STACK_SIZE		(0x40)
 #endif
+
+#define LOW_LEVEL_SRAM_STACK		(SRAM0_START + SRAM0_SIZE - 4)
 
 /* GPMC related */
 #define GPMC_CONFIG_CS0			(0x60)

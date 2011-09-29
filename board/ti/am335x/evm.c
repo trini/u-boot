@@ -661,17 +661,6 @@ int checkboard(void)
 	return 0;
 }
 
-/*
- * Reset the CPU
- */
-void reset_cpu(ulong addr)
-{
-	addr = __raw_readl(PRM_DEVICE_RSTCTRL);
-	addr &= ~BIT(1);
-	addr |= BIT(1);
-	__raw_writel(addr, PRM_DEVICE_RSTCTRL);
-}
-
 #ifdef CONFIG_DRIVER_TI_CPSW
 /* TODO : Check for the board specific PHY */
 static void evm_phy_init(char *name, int addr)
