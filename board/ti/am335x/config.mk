@@ -18,4 +18,4 @@ sinclude $(OBJTREE)/board/$(BOARDDIR)/config.tmp
 TI_DEVICE = ti81xx
 # ROM code will load u-boot to this address
 TI_LOAD_ADDR = 0x402f0400
-# CONFIG_SYS_TEXT_BASE for the 2 stages is different and comes from the Makefile
+# CONFIG_SYS_TEXT_BASE for the 2 stages is different and comes from the config
