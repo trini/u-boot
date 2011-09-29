@@ -76,6 +76,10 @@
 
 #include <config_cmd_default.h>
 
+/* Clock Defines */
+#define V_OSCK			24000000	/* Clock output from T2 */
+#define V_SCLK			(V_OSCK >> 1)
+
 /* 1st stage would have done the basic init */
 #define CONFIG_SKIP_LOWLEVEL_INIT
 
@@ -241,8 +245,9 @@
 					 GENERATED_GBL_DATA_SIZE)
 
  /* Platform/Board specific defs */
-#define CONFIG_SYS_CLK_FREQ		24000000
 #define CONFIG_SYS_TIMERBASE		0x48040000	/* Use Timer2 */
+#define CONFIG_SYS_PTV			2	/* Divisor: 2^(PTV+1) => 8 */
+#define CONFIG_SYS_HZ			1000
 
 /* NS16550 Configuration */
 #define CONFIG_SERIAL_MULTI     	1
