@@ -67,7 +67,7 @@ static void omap_nand_hwcontrol(struct mtd_info *mtd, int32_t cmd,
 
 #ifdef CONFIG_SPL_BUILD
 /* Check wait pin as dev ready indicator */
-int omap_spl_dev_ready(struct mtd_info *mtd)
+static int omap_spl_dev_ready(struct mtd_info *mtd)
 {
 	return gpmc_cfg->status & (1 << 8);
 }

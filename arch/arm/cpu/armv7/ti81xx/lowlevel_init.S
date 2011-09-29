@@ -29,6 +29,23 @@
 _TEXT_BASE:
 	.word	CONFIG_SYS_TEXT_BASE	/* Load address (RAM) */
 
+.global save_boot_params
+save_boot_params:
+#ifdef CONFIG_SPL_BUILD
+#if 0
+	ldr	r4, =ti81xx_boot_device
+	ldr	r5, [r0, #0x4]
+	and	r5, r5, #0xff
+#else
+	ldr	r4, =0x44E10040
+	ldr	r5, [r4, #0x0]
+	ldr	r5, =15
+	ldr	r4, =ti81xx_boot_device
+#endif
+	str	r5, [r4]
+#endif
+	bx	lr
+
 #ifdef CONFIG_NOR_BOOT
 /* GPMC CFG values for Spansion S29GL512P11TFI010 & S29GL512N11TFI010
  * This should work for most NOR, else we might have to move
@@ -440,17 +457,17 @@ cm_alwon_ocmc_1_clkstctrl_addr:
 	.word CM_ALWON_OCMC_1_CLKSTCTRL
 cm_alwon_ocmc_1_clkctrl_addr:
 	.word CM_ALWON_OCMC_1_CLKCTRL
-#endif
+#endif /* !CONFIG_AM335X */
 SRAM_STACK:
 	.word (SRAM0_START + SRAM0_SIZE - SRAM_GPMC_STACK_SIZE)
-#else
+#else /* !CONFIG_NOR_BOOT */
 SRAM_STACK:
 #ifndef CONFIG_AM335X
 	.word (SRAM0_START + 0x2800)	/* we'll place stack+heap+gd in top 10 KB */
-#else
+#else /* CONFIG_AM335X */
 	.word (SRAM0_START + SRAM0_SIZE - 4)	/* we'll place stack at the top */
-#endif
-#endif
+#endif /* !CONFIG_AM335X */
+#endif /* CONFIG_NOR_BOOT */
 
 _mark1:
 	.word mark1
