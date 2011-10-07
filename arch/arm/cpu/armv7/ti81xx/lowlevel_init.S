@@ -33,8 +33,8 @@ _TEXT_BASE:
 save_boot_params:
 #ifdef CONFIG_SPL_BUILD
 	ldr	r4, =ti81xx_boot_device
-	ldr	r5, [r0, #0x8]
-	and	r5, r5, #0xff
+	ldr	r5, [r0, #BOOT_DEVICE_OFFSET]
+	and	r5, r5, #BOOT_DEVICE_MASK
 	str	r5, [r4]
 #endif
 	bx	lr
