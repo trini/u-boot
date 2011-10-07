@@ -456,7 +456,7 @@ SRAM_STACK:
 #else /* !CONFIG_NOR_BOOT */
 SRAM_STACK:
 #ifndef CONFIG_AM335X
-	.word (SRAM0_START + 0x2800)	/* we'll place stack+heap+gd in top 10 KB */
+	.word (SRAM0_START + SRAM0_SIZE - 4)	/* we'll place stack at the top */
 #else /* CONFIG_AM335X */
 	.word (SRAM0_START + SRAM0_SIZE - 4)	/* we'll place stack at the top */
 #endif /* !CONFIG_AM335X */
