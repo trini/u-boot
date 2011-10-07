@@ -54,11 +54,7 @@ static void usb_pll_config(void);
 
 int dram_init(void)
 {
-#if 0
 	gd->ram_size = PHYS_DRAM_1_SIZE + PHYS_DRAM_2_SIZE;
-#else
-	gd->ram_size = PHYS_DRAM_1_SIZE;
-#endif
 
 	return 0;
 }
@@ -154,14 +150,14 @@ static void config_ti814x_ddr(void)
 
 	/*Program the DMM to Access EMIF0 and EMIF1*/
 	__raw_writel(0x80440300, DMM_LISA_MAP__0);
-	__raw_writel(0x80440300, DMM_LISA_MAP__1);
-	__raw_writel(0xC0440308, DMM_LISA_MAP__2);
-	__raw_writel(0xC0440308, DMM_LISA_MAP__3);
+	__raw_writel(0x90440300, DMM_LISA_MAP__1);
+	__raw_writel(0xa0440308, DMM_LISA_MAP__2);
+	__raw_writel(0xb0440308, DMM_LISA_MAP__3);
 
 	while(__raw_readl(DMM_LISA_MAP__0)!=0x80440300);
-	while(__raw_readl(DMM_LISA_MAP__1)!=0x80440300);
-	while(__raw_readl(DMM_LISA_MAP__2)!=0xC0440308);
-	while(__raw_readl(DMM_LISA_MAP__3)!=0xC0440308);
+	while(__raw_readl(DMM_LISA_MAP__1)!=0x90440300);
+	while(__raw_readl(DMM_LISA_MAP__2)!=0xa0440308);
+	while(__raw_readl(DMM_LISA_MAP__3)!=0xb0440308);
 
 	__raw_writel(0x80000000, DMM_PAT_BASE_ADDR);
 
