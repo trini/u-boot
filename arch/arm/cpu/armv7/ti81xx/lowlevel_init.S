@@ -32,16 +32,9 @@ _TEXT_BASE:
 .global save_boot_params
 save_boot_params:
 #ifdef CONFIG_SPL_BUILD
-#if 0
 	ldr	r4, =ti81xx_boot_device
-	ldr	r5, [r0, #0x4]
+	ldr	r5, [r0, #0x8]
 	and	r5, r5, #0xff
-#else
-	ldr	r4, =0x44E10040
-	ldr	r5, [r4, #0x0]
-	ldr	r5, =15
-	ldr	r4, =ti81xx_boot_device
-#endif
 	str	r5, [r4]
 #endif
 	bx	lr

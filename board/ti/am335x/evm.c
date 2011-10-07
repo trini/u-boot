@@ -36,7 +36,7 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-#undef EVM_EEPROM_DEBUG
+#define EVM_EEPROM_DEBUG
 
 /*define above EVM_EEPROM_DEBUG to get debug printf's for evm config display */
 #ifdef	EVM_EEPROM_DEBUG
@@ -134,6 +134,11 @@ extern void cpsw_eth_set_mac_addr(const u_int8_t *addr);
 static unsigned char daughter_board_connected = FALSE;
 static volatile int board_id = BASE_BOARD;
 
+/*
+ * dram_init:
+ * At this point we have initialized the i2c bus and can read the
+ * EEPROM which will tell us what board and revision we are on.
+ */
 int dram_init(void)
 {
 	gd->ram_size = PHYS_DRAM_1_SIZE;
@@ -146,11 +151,6 @@ void dram_init_banksize (void)
 	/* Fill up board info */
 	gd->bd->bi_dram[0].start = PHYS_DRAM_1;
 	gd->bd->bi_dram[0].size = PHYS_DRAM_1_SIZE;
-}
-
-int misc_init_r(void)
-{
-	return 0;
 }
 
 #ifdef CONFIG_SPL_BUILD
@@ -332,6 +332,7 @@ void s_init(void)
 		u32 uart_base = DEFAULT_UART_BASE;
 
 		/* IA Motor Control Board has default console on UART3*/
+		/* XXX: This is before we've probed / set board_id */
 		if (board_id == IA_BOARD) {
 			uart_base = UART3_BASE;
 		}
@@ -358,6 +359,7 @@ void s_init(void)
 #endif
 }
 
+/* called from board_init */
 static void detect_daughter_board(void)
 {
 	/* Check if daughter board is conneted */
@@ -370,7 +372,8 @@ static void detect_daughter_board(void)
 	}
 }
 
-static unsigned char profile = PROFILE_NONE;
+static unsigned char profile = PROFILE_0;
+/* called from board_init */
 static void detect_daughter_board_profile(void)
 {
 	unsigned short val;
@@ -388,6 +391,7 @@ static void detect_daughter_board_profile(void)
  * Basic board specific setup
  */
 #ifndef CONFIG_SPL_BUILD
+/* called from board_init */
 int board_evm_init(void)
 {
 	/* mach type passed to kernel */
@@ -490,6 +494,38 @@ err_out:
 	return 0;
 }
 
+int checkboard(void)
+{
+	return 0;
+}
+
+int misc_init_r(void)
+{
+#ifdef	EVM_EEPROM_DEBUG
+	unsigned int cntr;
+	unsigned char *valPtr;
+
+	PRINTD("EVM Configuration - ");
+	PRINTD("\tBoard id %x, profile %x, db %d\n", board_id, profile,
+						daughter_board_connected);
+	PRINTD("Base Board EEPROM Data\n");
+	valPtr = (unsigned char *)&header;
+	for(cntr = 0; cntr < sizeof(header); cntr++) {
+		if(cntr % 16 == 0)
+			PRINTD("\n0x%02x :", cntr);
+		PRINTD(" 0x%02x", (unsigned int)valPtr[cntr]);
+	}
+	PRINTD("\n\n");
+
+	PRINTD("Board identification from EEPROM contents:\n");
+	PRINTD("\tBoard name   : %.8s\n", header.name);
+	PRINTD("\tBoard version: %.4s\n", header.version);
+	PRINTD("\tBoard serial : %.12s\n", header.serial);
+	PRINTD("\tBoard config : %.6s\n\n", header.config);
+#endif
+	return 0;
+}
+
 #ifdef BOARD_LATE_INIT
 int board_late_init(void)
 {
@@ -506,54 +542,6 @@ int board_late_init(void)
 	return 0;
 }
 #endif
-
-/* Display the board info */
-int checkboard(void)
-{
-#ifdef	EVM_EEPROM_DEBUG
-    unsigned int cntr;
-    unsigned char *valPtr;
-#endif
-
-#ifdef CONFIG_SPL_BUILD
-	if (board_id == GP_BOARD) {
-#ifdef CONFIG_NAND
-		if (profile & (PROFILE_2 | PROFILE_3))
-			printf("NAND: NAND device not present in selected "
-				"profile. Change the profile and reboot\n");
-#endif
-#ifdef CONFIG_NOR
-		if (!(profile & PROFILE_3))
-			printf("NOR: NOR device not present in selected "
-				"profile. Change the profile and reboot\n");
-#endif
-	}
-#endif
-
-#ifdef	EVM_EEPROM_DEBUG
-    PRINTD("EVM Configuration - ");
-    PRINTD("\tBoard id %x, profile %x, db %d\n", board_id, profile,
-						daughter_board_connected);
-    PRINTD("Base Board EEPROM Data\n");
-    valPtr = (unsigned char *)&header;
-    for(cntr = 0; cntr < sizeof(header); cntr++) {
-            if(cntr % 16 == 0)
-                    PRINTD("\n0x%02x :", cntr);
-
-            PRINTD(" 0x%02x", (unsigned int)valPtr[cntr]);
-    }
-    PRINTD("\n\n");
-
-    PRINTD("Board identification from EEPROM contents:\n");
-    PRINTD("\tBoard name   : %.8s\n", header.name);
-    PRINTD("\tBoard version: %.4s\n", header.version);
-    PRINTD("\tBoard serial : %.12s\n", header.serial);
-    PRINTD("\tBoard config : %.6s\n\n", header.config);
-#endif
-
-
-	return 0;
-}
 
 #ifdef CONFIG_DRIVER_TI_CPSW
 /* TODO : Check for the board specific PHY */
