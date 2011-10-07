@@ -83,11 +83,6 @@ static inline void delay(unsigned long loops)
  */
 int board_init(void)
 {
-	u32 regVal;
-
-	/* Do the required pin-muxing before modules are setup */
-	set_muxconf_regs();
-
 #ifdef CONFIG_DRIVER_TI_CPSW
 	if (PG2_1 == get_cpu_rev()) {
 		/* setup RMII_REFCLK to be sourced from audio_pll */
@@ -96,19 +91,6 @@ int board_init(void)
 		__raw_writel(0x30a,GMII_SEL);
 	}
 #endif
-
-	/* Get Timer and UART out of reset */
-
-	/* UART softreset */
-	regVal = __raw_readl(UART_SYSCFG);
-	regVal |= 0x2;
-	__raw_writel(regVal, UART_SYSCFG);
-	while( (__raw_readl(UART_SYSSTS) & 0x1) != 0x1);
-
-	/* Disable smart idle */
-	regVal = __raw_readl(UART_SYSCFG);
-	regVal |= (1<<3);
-	__raw_writel(regVal, UART_SYSCFG);
 
 	/* mach type passed to kernel */
 	gd->bd->bi_arch_number = MACH_TYPE_TI8148EVM;
@@ -747,7 +729,29 @@ void s_init(u32 in_ddr)
 	prcm_init();		/* Setup the PLLs and the clocks for the peripherals */
 
 #ifdef CONFIG_SPL_BUILD	
+	/* Do the required pin-muxing before modules are setup */
+	set_muxconf_regs();
+
+	/* UART softreset */
+	{
+		u32 regVal;
+
+		regVal = __raw_readl(UART_SYSCFG);
+		regVal |= 0x2;
+		__raw_writel(regVal, UART_SYSCFG);
+		while( (__raw_readl(UART_SYSSTS) & 0x1) != 0x1);
+
+		/* Disable UART smart idle */
+		regVal = __raw_readl(UART_SYSCFG);
+		regVal |= (1<<3);
+		__raw_writel(regVal, UART_SYSCFG);
+	}
+
+	preloader_console_init();
+
 	config_ti814x_ddr();	/* Do DDR settings */
+
+	board_init();
 #endif /* CONFIG_SPL_BUILD */
 }
 
