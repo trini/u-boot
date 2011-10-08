@@ -112,6 +112,10 @@
 	"loadbootscript=fatload mmc 0 ${script_addr} boot.scr\0" \
 	"bootscript= echo Running bootscript from MMC/SD to set the ENV...; " \
 		"source ${script_addr}\0" \
+	"bootenv=uEnv.txt\0" \
+	"loadbootenv=fatload mmc 0 ${loadaddr} ${bootenv}\0" \
+	"importbootenv=echo Importing environment from mmc ...; " \
+		"env import -t $loadaddr $filesize\0" \
 	"mmc_load_uimage_fat=fatload mmc 0 ${loadaddr} ${bootfile}\0" \
 	"mmc_load_uimage=ext2load mmc 0:2 ${loadaddr} /boot/${bootfile}\0" \
 	"bootargs_defaults=setenv bootargs " \
@@ -161,19 +165,21 @@
 		"bootm ${loadaddr}\0" \
 
 #define CONFIG_BOOTCOMMAND \
-	"mw.l 0x44e10650 0x05 ; if mmc rescan; then " \
-		"if run loadbootscript; then " \
-			"run bootscript; " \
-		"else " \
-			"if run mmc_load_uimage; then " \
-				"run mmc_boot; " \
-			"else " \
-				"run nand_boot; " \
-			"fi; " \
+	"mw.l 0x44e10650 0x05 ; " \
+	"if mmc rescan; then " \
+		"if run loadbootenv; then " \
+			"echo Loaded environment from ${bootenv};" \
+			"run importbootenv; " \
 		"fi; " \
-	"else " \
-		"run nand_boot; " \
-	"fi"
+		"if test -n $uenvcmd; then " \
+			"echo Running uenvcmd ...;" \
+			"run uenvcmd;" \
+		"fi;" \
+		"if run mmc_load_uimage; then " \
+			"run mmc_boot; " \
+		"fi; " \
+	"fi; " \
+	"run nand_boot; " \
 
 #define CONFIG_DISPLAY_BOARDINFO
 #define CONFIG_MISC_INIT_R
