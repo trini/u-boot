@@ -112,7 +112,8 @@
 	"loadbootscript=fatload mmc 0 ${script_addr} boot.scr\0" \
 	"bootscript= echo Running bootscript from MMC/SD to set the ENV...; " \
 		"source ${script_addr}\0" \
-	"mmc_load_uimage=fatload mmc 0 ${loadaddr} ${bootfile}\0" \
+	"mmc_load_uimage_fat=fatload mmc 0 ${loadaddr} ${bootfile}\0" \
+	"mmc_load_uimage=ext2load mmc 0:2 ${loadaddr} /boot/${bootfile}\0" \
 	"bootargs_defaults=setenv bootargs " \
 		"console=${console}\0 " \
 	"mmc_args=run bootargs_defaults;" \
@@ -403,6 +404,7 @@
 # define CONFIG_CMD_MMC		1
 # define CONFIG_DOS_PARTITION	1
 # define CONFIG_CMD_FAT		1
+# define CONFIG_CMD_EXT2	1
 #endif
 
 /* Unsupported features */
