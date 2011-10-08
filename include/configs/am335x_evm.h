@@ -24,7 +24,7 @@
 #define CONFIG_AM335X_HSMMC_INSTANCE	0	/* 0 - MMC0, 1 - MMC1 */
 
 /* set to negative value for no autoboot */
-#define CONFIG_BOOTDELAY		3
+#define CONFIG_BOOTDELAY		0
 
 # if defined(CONFIG_SPI_BOOT)
 #  define CONFIG_SPI			1
@@ -72,9 +72,6 @@
 #define CONFIG_CMDLINE_TAG		1 /* enable passing of ATAGs  */
 #define CONFIG_SETUP_MEMORY_TAGS	1
 #define CONFIG_INITRD_TAG		1 /* Required for ramdisk support */
-
-/* set to negative value for no autoboot */
-#define CONFIG_BOOTDELAY		3
 
 #define CONFIG_MMC			1
 
