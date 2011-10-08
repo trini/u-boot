@@ -175,9 +175,7 @@
 			"echo Running uenvcmd ...;" \
 			"run uenvcmd;" \
 		"fi;" \
-		"if run mmc_load_uimage; then " \
-			"run mmc_boot; " \
-		"fi; " \
+		"run mmc_boot; " \
 	"fi; " \
 	"run nand_boot; " \
 
