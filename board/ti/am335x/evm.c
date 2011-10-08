@@ -327,31 +327,31 @@ void s_init(void)
 #ifdef CONFIG_SPL_BUILD
 	/* Setup the PLLs and the clocks for the peripherals */
 	pll_init();
-	{
-		u32 regVal;
-		u32 uart_base = DEFAULT_UART_BASE;
 
-		/* IA Motor Control Board has default console on UART3*/
-		/* XXX: This is before we've probed / set board_id */
-		if (board_id == IA_BOARD) {
-			uart_base = UART3_BASE;
-		}
+	/* UART softreset */
+	u32 regVal;
+	u32 uart_base = DEFAULT_UART_BASE;
 
-		/* UART softreset */
-		regVal = __raw_readl(uart_base + UART_SYSCFG_OFFSET);
-		regVal |= UART_RESET;
-		__raw_writel(regVal, (uart_base + UART_SYSCFG_OFFSET) );
-		while ((__raw_readl(uart_base + UART_SYSSTS_OFFSET) &
-				UART_CLK_RUNNING_MASK) != UART_CLK_RUNNING_MASK);
-
-		/* Disable smart idle */
-		regVal = __raw_readl((uart_base + UART_SYSCFG_OFFSET));
-		regVal |= UART_SMART_IDLE_EN;
-		__raw_writel(regVal, (uart_base + UART_SYSCFG_OFFSET));
-
-		/* Initialize the Timer */
-		init_timer();
+	enable_uart0_pin_mux();
+	/* IA Motor Control Board has default console on UART3*/
+	/* XXX: This is before we've probed / set board_id */
+	if (board_id == IA_BOARD) {
+		uart_base = UART3_BASE;
 	}
+
+	regVal = __raw_readl(uart_base + UART_SYSCFG_OFFSET);
+	regVal |= UART_RESET;
+	__raw_writel(regVal, (uart_base + UART_SYSCFG_OFFSET) );
+	while ((__raw_readl(uart_base + UART_SYSSTS_OFFSET) &
+			UART_CLK_RUNNING_MASK) != UART_CLK_RUNNING_MASK);
+
+	/* Disable smart idle */
+	regVal = __raw_readl((uart_base + UART_SYSCFG_OFFSET));
+	regVal |= UART_SMART_IDLE_EN;
+	__raw_writel(regVal, (uart_base + UART_SYSCFG_OFFSET));
+
+	/* Initialize the Timer */
+	init_timer();
 
 	preloader_console_init();
 
