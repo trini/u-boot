@@ -472,6 +472,10 @@ int board_init(void)
 
 	gpmc_init();
 
+	/* set mii mode to rgmii in in device configure register */
+	if (board_id != IA_BOARD)
+		__raw_writel(RGMII_MODE_ENABLE, MAC_MII_SEL);
+
 	return 0;
 
 err_out:
@@ -760,10 +764,6 @@ int board_eth_init(bd_t *bis)
 				"Set <ethaddr> variable to overcome this.\n");
 		}
 	}
-
-	/* set mii mode to rgmii in in device configure register */
-	if (board_id != IA_BOARD)
-		__raw_writel(RGMII_MODE_ENABLE, MAC_MII_SEL);
 
 	if (board_id == IA_BOARD) {
 		cpsw_slaves[0].phy_id = 30;
