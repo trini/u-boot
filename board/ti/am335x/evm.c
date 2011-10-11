@@ -78,6 +78,7 @@ DECLARE_GLOBAL_DATA_PTR;
 
 /* RGMII mode define */
 #define RGMII_MODE_ENABLE	0xA
+#define RMII_MODE_ENABLE	0x5
 
 /* TLK110 PHY registers */
 #define TLK110_COARSEGAIN_REG	0x00A3
@@ -488,6 +489,11 @@ err_out:
 	profile = 1;	/* profile 0 is internally considered as 1 */
 	daughter_board_connected = TRUE;
 	configure_evm_pin_mux(board_id, profile, daughter_board_connected);
+
+	/* Empty EEPROMs default to BeagleBoard Bone for now, till EEPROM is programmed
+ 	 * Select RMII mode in control module for BeagleBone ethernet
+ 	 */
+	__raw_writel(RMII_MODE_ENABLE, MAC_MII_SEL);
 
 #ifndef CONFIG_SPL_BUILD
 	board_evm_init();
