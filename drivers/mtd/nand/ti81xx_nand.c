@@ -919,7 +919,10 @@ int board_nand_init(struct nand_chip *nand)
 	nand->ecc.write_page = ti81xx_write_page_bch;
 	nand->ecc.read_page = ti81xx_read_page_bch;
 #endif
-	nand->read_buf = nand_read_buf;
+	if (nand->options & NAND_BUSWIDTH_16)
+		nand->read_buf = nand_read_buf16;
+	else
+		nand->read_buf = nand_read_buf;
 	nand->dev_ready = ti81xx_spl_dev_ready;
 
 	ti81xx_hwecc_init_bch(nand, NAND_ECC_READ);
