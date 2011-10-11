@@ -147,17 +147,10 @@
 #define CONFIG_SPL_POWER_SUPPORT
 #define CONFIG_SPL_LDSCRIPT		"$(CPUDIR)/omap-common/u-boot-spl.lds"
 
-#if 0
-#ifdef CONFIG_SPL_BUILD
-#define DEBUG
-#define NAND_DEBUG
-#endif
 /* NAND boot config */
-#if 0
 #define CONFIG_SPL_NAND_SIMPLE
-#endif
 #define CONFIG_SPL_NAND_SUPPORT
-#define CONFIG_SYS_NAND_5_ADDR_CYCL
+#define CONFIG_SYS_NAND_5_ADDR_CYCLE
 #define CONFIG_SYS_NAND_PAGE_COUNT	64
 #define CONFIG_SYS_NAND_PAGE_SIZE	2048
 #define CONFIG_SYS_NAND_OOBSIZE		64
@@ -181,10 +174,6 @@
 #define CONFIG_SYS_NAND_U_BOOT_START   CONFIG_SYS_TEXT_BASE
 
 #define CONFIG_SYS_NAND_U_BOOT_OFFS	0x80000
-#if 0
-#define CONFIG_SYS_NAND_U_BOOT_SIZE	0x40000
-#endif
-#endif
 
 /*
  * 1MB into the SDRAM to allow for SPL's bss at the beginning of SDRAM
