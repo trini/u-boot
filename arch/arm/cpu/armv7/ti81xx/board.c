@@ -64,3 +64,11 @@ u32 omap_boot_device(void)
 	return ti81xx_boot_device;
 }
 #endif /* CONFIG_SPL_BUILD */
+
+#ifndef CONFIG_SYS_DCACHE_OFF
+void enable_caches(void)
+{
+	/* Enable D-cache. I-cache is already enabled in start.S */
+	dcache_enable();
+}
+#endif
