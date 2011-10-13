@@ -601,14 +601,12 @@ static void evm_phy_init(char *name, int addr)
 
 	/* 
 	 * This is done as a workaround to support TLK110 rev1.0 PHYs.
-	 * Read PHY identification regisers 1 and 2 and if that fails,
-	 * we assume rev1.0 and do nothing more.
+	 * We can only perform these reads on these PHYs (currently
+	 * only found on the IA EVM).
 	 */
 	if ((miiphy_read(name, addr, MII_PHYSID1, &phyid1) != 0) ||
-			(miiphy_read(name, addr, MII_PHYSID2, &phyid2) != 0)) {
-		printf("Assuming TLK110 rev1.0 PHY\n");
+			(miiphy_read(name, addr, MII_PHYSID2, &phyid2) != 0))
 		return;
-	}
 
 	if ((phyid1 == TLK110_PHYIDR1) && (phyid2 == TLK110_PHYIDR2)) {
 		miiphy_read(name, addr, TLK110_COARSEGAIN_REG, &val);
