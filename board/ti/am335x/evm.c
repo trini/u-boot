@@ -300,7 +300,7 @@ static void init_timer(void)
 /*
  * MPU voltage switching for MPU frequency switching.
  */
-#ifdef CONFIG_SPL_BUILD
+#if defined(CONFIG_SPL_BUILD) && defined(CONFIG_SPL_BOARD_INIT)
 int mpu_voltage_update(unsigned char vdd1_op_vol_sel)
 {
 	uchar buf[4];
