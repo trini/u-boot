@@ -345,6 +345,7 @@
  *------------------------------------------------
  */
 #if defined(CONFIG_CMD_NET)
+#define CONFIG_SYS_DCACHE_OFF		/* Driver not D-CACHE safe */
 #define CONFIG_DRIVER_TI_EMAC
 #define CONFIG_DRIVER_TI_EMAC_USE_RMII
 #define CONFIG_MII
