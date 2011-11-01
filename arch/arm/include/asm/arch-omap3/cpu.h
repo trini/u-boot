@@ -220,6 +220,7 @@ struct sdrc {
 
 /* EMIF4 */
 typedef struct emif4 {
+	unsigned int mod_id;
 	unsigned int sdram_sts;
 	unsigned int sdram_config;
 	unsigned int res1;
