@@ -68,10 +68,6 @@
 #define CONFIG_SYS_MALLOC_LEN		(CONFIG_ENV_SIZE + (128 << 10))
 
 /* Hardware drivers */
-
-/* DDR - I use Micron DDR */
-#define CONFIG_OMAP3_MICRON_DDR		1
-
 /* DM9000 */
 #define CONFIG_NET_MULTI		1
 #define CONFIG_NET_RETRY_COUNT		20
