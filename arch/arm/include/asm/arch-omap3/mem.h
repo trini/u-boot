@@ -43,6 +43,12 @@ enum {
 #define SDRC_SHARING	0x00000100
 #define SDRC_MR_0_SDR	0x00000031
 
+/* optimized timings good for current shipping parts */
+#define SDP_3430_SDRC_RFR_CTRL_100MHz	0x0002da01
+#define SDP_3430_SDRC_RFR_CTRL_133MHz	0x0003de01 /* 7.8us/7.5ns - 50=0x3de */
+#define SDP_3430_SDRC_RFR_CTRL_165MHz	0x0004e201 /* 7.8us/6ns - 50=0x4e2 */
+#define SDP_3430_SDRC_RFR_CTRL_200MHz	0x0005e601 /* 7.8us/5ns - 50=0x5e6 */
+
 #define DLL_OFFSET		0
 #define DLL_WRITEDDRCLKX2DIS	1
 #define DLL_ENADLL		1
@@ -144,10 +150,6 @@ enum {
 	(MICRON_B32NOT16 << 4) | (MICRON_DEEPPD << 3) | \
 	(MICRON_DDRTYPE << 2) | (MICRON_RAMTYPE))
 
-#define MICRON_ARCV				2030
-#define MICRON_ARE				0x1
-#define MICRON_V_RFR_CTRL ((MICRON_ARCV << 8) | (MICRON_ARE))
-
 #define MICRON_BL				0x2
 #define MICRON_SIL				0x0
 #define MICRON_CASL				0x3
@@ -203,7 +205,7 @@ enum {
 #define V_ACTIMA_165 MICRON_V_ACTIMA_165
 #define V_ACTIMB_165 MICRON_V_ACTIMB_165
 #define V_MCFG			MICRON_V_MCFG
-#define V_RFR_CTRL		MICRON_V_RFR_CTRL
+#define V_RFR_CTRL		SDP_3430_SDRC_RFR_CTRL_165MHz
 #define V_MR			MICRON_V_MR
 #endif
 
