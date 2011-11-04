@@ -483,12 +483,20 @@ void spl_board_init(void)
 		if (tps65217_reg_read(STATUS, &pmic_status_reg))
 			return;
 
+		/* Increase USB current limit to 1300mA */
+		if (tps65217_reg_write(PROT_LEVEL_NONE, POWER_PATH,
+				       USB_INPUT_CUR_LIMIT_1300MA,
+				       USB_INPUT_CUR_LIMIT_MASK))
+			printf("tps65217_reg_write failure\n");
+
 		/* Only perform PMIC configurations if board rev > A1 */
 		if (!strncmp(header.version, "00A1", 4))
 			return;
 
-		if (!(pmic_status_reg & PWR_SRC_AC_BITMASK)) {
-			printf("No AC power, disabling frequency switch\n");
+		/* Set DCDC2 (MPU) voltage to 1.275V */
+		if (tps65217_voltage_update(DEFDCDC2,
+					     DCDC_VOLT_SEL_1275MV)) {
+			printf("tps65217_voltage_update failure\n");
 			return;
 		}
 
@@ -501,20 +509,13 @@ void spl_board_init(void)
 				       LDO_VOLTAGE_OUT_3_3, LDO_MASK))
 			printf("tps65217_reg_write failure\n");
 
-		/* Increase USB current limit to 1300mA */
-		if (tps65217_reg_write(PROT_LEVEL_NONE, POWER_PATH,
-				       USB_INPUT_CUR_LIMIT_1300MA,
-				       USB_INPUT_CUR_LIMIT_MASK))
-			printf("tps65217_reg_write failure\n");
-
-		/* Set DCDC2 (MPU) voltage to 1.275V */
-		if (!tps65217_voltage_update(DEFDCDC2,
-					     DCDC_VOLT_SEL_1275MV)) {
-			/* Set MPU Frequency to 720MHz */
-			mpu_pll_config(MPUPLL_M_720);
-		} else {
-			printf("tps65217_voltage_update failure\n");
+		if (!(pmic_status_reg & PWR_SRC_AC_BITMASK)) {
+			printf("No AC power, disabling frequency switch\n");
+			return;
 		}
+
+		/* Set MPU Frequency to 720MHz */
+		mpu_pll_config(MPUPLL_M_720);
 	} else {
 		/* 
 		 * EVM PMIC code.  PMIC voltage is configuring for frequency
