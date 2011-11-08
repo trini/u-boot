@@ -184,37 +184,56 @@
 #define CONFIG_JFFS2_PART_SIZE		0xf980000	/* sz of jffs2 part */
 
 /* Environment information */
-#define CONFIG_BOOTDELAY	10
+#define CONFIG_BOOTDELAY	3
 
-#define CONFIG_BOOTFILE		uImage
+#define CONFIG_BOOTFILE		"uImage"
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"loadaddr=0x82000000\0" \
+	"kloadaddr=0x80007fc0\0" \
 	"console=ttyO2,115200n8\0" \
 	"mmcdev=0\0" \
-	"mmcargs=setenv bootargs console=${console} " \
+	"bootenv=uEnv.txt\0" \
+	"loadbootenv=fatload mmc ${mmc_dev} ${loadaddr} ${bootenv}\0" \
+	"importbootenv=echo Importing environment from mmc ...; " \
+		"env import -t $loadaddr $filesize\0" \
+	"optargs=\0" \
+	"bootargs_defaults=setenv bootargs " \
+		"console=${console} " \
+		"${optargs}\0" \
+	"mmcargs=run bootargs_defaults; " \
+		"setenv bootargs ${bootargs} " \
 		"root=/dev/mmcblk0p2 rw " \
 		"rootfstype=ext3 rootwait\0" \
-	"nandargs=setenv bootargs console=${console} " \
+	"nandargs=run bootargs_defaults; " \
+		"setenv bootargs ${bootargs} " \
 		"root=/dev/mtdblock4 rw " \
 		"rootfstype=jffs2\0" \
 	"loadbootscript=fatload mmc ${mmcdev} ${loadaddr} boot.scr\0" \
 	"bootscript=echo Running bootscript from mmc ...; " \
 		"source ${loadaddr}\0" \
-	"loaduimage=fatload mmc ${mmcdev} ${loadaddr} uImage\0" \
+	"loaduimage=fatload mmc ${mmcdev} ${kloadaddr} uImage\0" \
 	"mmcboot=echo Booting from mmc ...; " \
 		"run mmcargs; " \
-		"bootm ${loadaddr}\0" \
+		"bootm ${kloadaddr}; \0" \
 	"nandboot=echo Booting from nand ...; " \
 		"run nandargs; " \
-		"nand read ${loadaddr} 280000 400000; " \
-		"bootm ${loadaddr}\0" \
+		"nand read ${kloadaddr} 280000 400000; " \
+		"bootm ${kloadaddr}; \0" \
 
 #define CONFIG_BOOTCOMMAND \
 	"if mmc rescan ${mmcdev}; then " \
 		"if run loadbootscript; then " \
 			"run bootscript; " \
 		"else " \
+			"if run loadbootenv; then " \
+				"echo Loaded environment from ${bootenv};" \
+				"run importbootenv;" \
+			"fi;" \
+			"if test -n $uenvcmd; then " \
+				"echo Running uenvcmd ...;" \
+				"run uenvcmd;" \
+			"fi;" \
 			"if run loaduimage; then " \
 				"run mmcboot; " \
 			"else run nandboot; " \
