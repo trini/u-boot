@@ -553,9 +553,12 @@ static void cpsw_slave_update_link(struct cpsw_slave *slave,
 			mac_control |= BIT(18);	/* In Band mode	*/
 		else if (speed == 100)
 			mac_control |= BIT(15);
-		else if (speed == 1000)
+		else if (speed == 1000) {
 			mac_control &= ~BIT(7);	/* TODO: Do not enable
 						 * gig support now */
+			speed = 100;
+		}
+
 		if (duplex == FULL)
 			mac_control |= BIT(0);	/* FULLDUPLEXEN	*/
 	}
