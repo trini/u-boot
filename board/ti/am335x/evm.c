@@ -427,35 +427,47 @@ int tps65217_voltage_update(unsigned char dc_cntrl_reg, unsigned char volt_sel)
 }
 
 /*
- * MPU voltage switching for MPU frequency switching.
+ * voltage switching for MPU frequency switching.
+ * @module = mpu - 0, core - 1
+ * @vddx_op_vol_sel = vdd voltage to set
  */
-int mpu_voltage_update(unsigned char vdd1_op_vol_sel)
+
+#define MPU	0
+#define CORE	1
+
+int voltage_update(unsigned int module, unsigned char vddx_op_vol_sel)
 {
 	uchar buf[4];
+	unsigned int reg_offset;
 
-	/* Select VDD1 OP   */
-	if (i2c_read(PMIC_SR_I2C_ADDR, PMIC_VDD1_OP_REG, 1, buf, 1))
+	if(module == MPU)
+		reg_offset = PMIC_VDD1_OP_REG;
+	else
+		reg_offset = PMIC_VDD2_OP_REG;
+
+	/* Select VDDx OP   */
+	if (i2c_read(PMIC_SR_I2C_ADDR, reg_offset, 1, buf, 1))
 		return 1;
 
 	buf[0] &= ~PMIC_OP_REG_CMD_MASK;
 
-	if (i2c_write(PMIC_SR_I2C_ADDR, PMIC_VDD1_OP_REG, 1, buf, 1))
+	if (i2c_write(PMIC_SR_I2C_ADDR, reg_offset, 1, buf, 1))
 		return 1;
 
-	/* Configure VDD1 OP  Voltage */
-	if (i2c_read(PMIC_SR_I2C_ADDR, PMIC_VDD1_OP_REG, 1, buf, 1))
+	/* Configure VDDx OP  Voltage */
+	if (i2c_read(PMIC_SR_I2C_ADDR, reg_offset, 1, buf, 1))
 		return 1;
 
 	buf[0] &= ~PMIC_OP_REG_SEL_MASK;
-	buf[0] |= vdd1_op_vol_sel;
+	buf[0] |= vddx_op_vol_sel;
 
-	if (i2c_write(PMIC_SR_I2C_ADDR, PMIC_VDD1_OP_REG, 1, buf, 1))
+	if (i2c_write(PMIC_SR_I2C_ADDR, reg_offset, 1, buf, 1))
 		return 1;
 
-	if (i2c_read(PMIC_SR_I2C_ADDR, PMIC_VDD1_OP_REG, 1, buf, 1))
+	if (i2c_read(PMIC_SR_I2C_ADDR, reg_offset, 1, buf, 1))
 		return 1;
 
-	if ((buf[0] & PMIC_OP_REG_SEL_MASK ) != vdd1_op_vol_sel)
+	if ((buf[0] & PMIC_OP_REG_SEL_MASK ) != vddx_op_vol_sel)
 		return 1;
 
 	return 0;
@@ -522,7 +534,7 @@ void spl_board_init(void)
 		 * scaling.
 		 */
 	        if (!i2c_probe(PMIC_SR_I2C_ADDR)) {
-		        if (!mpu_voltage_update(PMIC_OP_REG_SEL_1_2_6)) {
+		        if (!voltage_update(MPU, PMIC_OP_REG_SEL_1_2_6)) {
 			        /* Frequency switching for OPP 120 */
 			        mpu_pll_config(MPUPLL_M_720);
 		        }
