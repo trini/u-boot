@@ -529,16 +529,18 @@ void spl_board_init(void)
 		/* Set MPU Frequency to 720MHz */
 		mpu_pll_config(MPUPLL_M_720);
 	} else {
-		/* 
-		 * EVM PMIC code.  PMIC voltage is configuring for frequency
-		 * scaling.
+		/*
+		 * EVM PMIC code.  All boards currently want an MPU voltage
+		 * of 1.2625V and CORE voltage of 1.1375V to operate at
+		 * 720MHz.
 		 */
-	        if (!i2c_probe(PMIC_SR_I2C_ADDR)) {
-		        if (!voltage_update(MPU, PMIC_OP_REG_SEL_1_2_6)) {
-			        /* Frequency switching for OPP 120 */
-			        mpu_pll_config(MPUPLL_M_720);
-		        }
-	        }
+		if (i2c_probe(PMIC_SR_I2C_ADDR))
+			return;
+
+		if (!voltage_update(MPU, PMIC_OP_REG_SEL_1_2_6) &&
+				!voltage_update(CORE, PMIC_OP_REG_SEL_1_1_3))
+			/* Frequency switching for OPP 120 */
+	 		mpu_pll_config(MPUPLL_M_720);
 	}
 }
 #endif

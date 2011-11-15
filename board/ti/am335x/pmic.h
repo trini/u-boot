@@ -60,7 +60,7 @@
 #define PMIC_OP_REG_CMD_SR			(0x1 << 7)
 
 #define PMIC_OP_REG_SEL_MASK			(0x7F << 0)
-#define PMIC_OP_REG_SEL_1_2			(0x33 << 0)
+#define PMIC_OP_REG_SEL_1_1_3			(0x2E << 0)	/* 1.1375 V */
 #define PMIC_OP_REG_SEL_1_2_6			(0x38 << 0)	/* 1.2625 V */
 
 /* Device control register . (DEVCTRL_REG) */
