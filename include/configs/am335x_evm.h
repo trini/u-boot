@@ -25,6 +25,8 @@
 
 #include <config_cmd_default.h>
 
+#define CONFIG_CMD_ASKENV
+
 #define CONFIG_ENV_SIZE			0x2000
 #define CONFIG_SYS_MALLOC_LEN		(CONFIG_ENV_SIZE + (32 * 1024))
 #define CONFIG_ENV_OVERWRITE
