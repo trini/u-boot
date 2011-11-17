@@ -232,6 +232,7 @@
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"loadaddr=0x80200000\0" \
+	"kloadaddr=0x80007fc0\0" \
 	"rdaddr=0x81000000\0" \
 	"usbtty=cdc_acm\0" \
 	"bootfile=uImage.beagle\0" \
@@ -284,18 +285,18 @@
 		"root=${ramroot} " \
 		"rootfstype=${ramrootfstype}\0" \
 	"loadramdisk=fatload mmc ${mmcdev} ${rdaddr} ramdisk.gz\0" \
-	"loaduimagefat=fatload mmc ${mmcdev} ${loadaddr} uImage\0" \
-	"loaduimage=ext2load mmc ${mmcdev}:2 ${loadaddr} /boot/uImage\0" \
+	"loaduimagefat=fatload mmc ${mmcdev} ${kloadaddr} uImage\0" \
+	"loaduimage=ext2load mmc ${mmcdev}:2 ${kloadaddr} /boot/uImage\0" \
 	"mmcboot=echo Booting from mmc ...; " \
 		"run mmcargs; " \
-		"bootm ${loadaddr}\0" \
+		"bootm ${kloadaddr}\0" \
 	"nandboot=echo Booting from nand ...; " \
 		"run nandargs; " \
-		"nand read ${loadaddr} 280000 400000; " \
-		"bootm ${loadaddr}\0" \
+		"nand read ${kloadaddr} 280000 400000; " \
+		"bootm ${kloadaddr}\0" \
 	"ramboot=echo Booting from ramdisk ...; " \
 		"run ramargs; " \
-		"bootm ${loadaddr}\0" \
+		"bootm ${kloadaddr}\0" \
 
 #define CONFIG_BOOTCOMMAND \
 	"if mmc rescan ${mmcdev}; then " \
