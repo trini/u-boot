@@ -311,7 +311,7 @@
 			"echo Running uenvcmd ...;" \
 			"run uenvcmd;" \
 		"fi;" \
-		"if run loaduimage; then " \
+		"if run loaduimagefat; then " \
 			"run mmcboot;" \
 		"fi;" \
 	"fi;" \
