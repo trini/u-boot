@@ -866,8 +866,11 @@ static void evm_phy_init(char *name, int addr)
 	}
 	miiphy_read(name, addr, MII_BMCR, &val);
 
-	/* TODO: Disable GIG advertisement for the time being */
-	if (board_id != IA_BOARD && board_id != BONE_BOARD) {
+	/*
+	 * The 1.0 revisions of the GP board don't have functional
+	 * gigabit ethernet so we need to disable advertising.
+	 */
+	if (board_id == GP_BOARD && !strncmp(header.version, "1.0", 3)) {
 		miiphy_read(name, addr, MII_CTRL1000, &val);
 		val &= ~PHY_1000BTCR_1000FD;
 		val &= ~PHY_1000BTCR_1000HD;
