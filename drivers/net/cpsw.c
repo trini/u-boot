@@ -98,6 +98,7 @@ struct cpsw_slave_regs {
 	u32	flow_thresh;
 	u32	port_vlan;
 	u32	tx_pri_map;
+	u32	ts_seq_mtype;
 #ifdef CONFIG_TI814X
 	u32     ts_ctl;
 	u32     ts_seq_ltype;
