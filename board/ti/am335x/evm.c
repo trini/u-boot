@@ -951,6 +951,7 @@ static struct cpsw_platform_data cpsw_data = {
 	.mac_control		= (1 << 5) /* MIIEN */,
 	.control		= cpsw_control,
 	.phy_init		= evm_phy_init,
+	.gigabit_en		= 1,
 	.host_port_num		= 0,
 	.version		= CPSW_CTRL_VERSION_2,
 };
@@ -996,13 +997,21 @@ int board_eth_init(bd_t *bis)
 			__raw_writel(RMII_MODE_ENABLE, MAC_MII_SEL);
 		else
 			__raw_writel(MII_MODE_ENABLE, MAC_MII_SEL);
+		/* No gigabit */
+		cpsw_data.gigabit_en = 0;
 	} else if (board_id == IA_BOARD) {
 		cpsw_slaves[0].phy_id = 30;
 		cpsw_slaves[1].phy_id = 0;
+		/* No gigabit */
+		cpsw_data.gigabit_en = 0;
 	} else {
 		/* set mii mode to rgmii in in device configure register */
 		__raw_writel(RGMII_MODE_ENABLE, MAC_MII_SEL);
 	}
+
+	/* GP EVM 1.0 (A, B) does not have functional gigabit */
+	if (board_id == GP_BOARD && !strncmp(header.version, "1.0", 3))
+		cpsw_data.gigabit_en = 0;
 
 	return cpsw_register(&cpsw_data);
 }

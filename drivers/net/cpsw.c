@@ -555,9 +555,13 @@ static void cpsw_slave_update_link(struct cpsw_slave *slave,
 		else if (speed == 100)
 			mac_control |= BIT(15);
 		else if (speed == 1000) {
-			mac_control &= ~BIT(7);	/* TODO: Do not enable
-						 * gig support now */
-			speed = 100;
+			if (priv->data.gigabit_en)
+				mac_control |= BIT(7);
+			else {
+				/* Disable gigabit as it's non-functional */
+				mac_control &= ~BIT(7);
+				speed = 100;
+			}
 		}
 
 		if (duplex == FULL)

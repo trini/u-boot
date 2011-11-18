@@ -213,6 +213,7 @@ struct cpsw_platform_data {
 	struct cpsw_slave_data  *slave_data;
 	void	(*control)(int enabled);
 	void	(*phy_init)(char *name, int addr);
+	u32	gigabit_en;	/* gigabit capable AND enabled		*/
 	u32	host_port_num;
 	u8	version;
 };
