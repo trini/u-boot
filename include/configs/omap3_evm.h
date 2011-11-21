@@ -137,6 +137,7 @@
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"loadaddr=0x82000000\0" \
+	"kloadaddr=0x80007fc0\0" \
 	"usbtty=cdc_acm\0" \
 	"mmcdev=0\0" \
 	"console=ttyO0,115200n8\0" \
@@ -149,14 +150,14 @@
 	"loadbootscript=fatload mmc ${mmcdev} ${loadaddr} boot.scr\0" \
 	"bootscript=echo Running bootscript from mmc ...; " \
 		"source ${loadaddr}\0" \
-	"loaduimage=fatload mmc ${mmcdev} ${loadaddr} uImage\0" \
+	"loaduimage=fatload mmc ${mmcdev} ${kloadaddr} uImage\0" \
 	"mmcboot=echo Booting from mmc ...; " \
 		"run mmcargs; " \
-		"bootm ${loadaddr}\0" \
+		"bootm ${kloadaddr}\0" \
 	"nandboot=echo Booting from nand ...; " \
 		"run nandargs; " \
-		"onenand read ${loadaddr} 280000 400000; " \
-		"bootm ${loadaddr}\0" \
+		"nand read ${kloadaddr} 280000 400000; " \
+		"bootm ${kloadaddr}\0" \
 
 #define CONFIG_BOOTCOMMAND \
 	"if mmc rescan ${mmcdev}; then " \

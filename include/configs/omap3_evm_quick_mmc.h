@@ -74,8 +74,8 @@
 
 #define CONFIG_BOOTCOMMAND			\
 	"mmc rescan 0; "			\
-	"fatload mmc 0 0x82000000 uImage; "	\
-	"bootm 0x82000000;"
+	"fatload mmc 0 0x80007fc0 uImage; "	\
+	"bootm 0x80007fc0;"
 
 /*
  * Update the bootargs as necessary e.g. size of memory, partition and fstype

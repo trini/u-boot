@@ -61,8 +61,8 @@
 	"silent=1"
 
 #define CONFIG_BOOTCOMMAND				\
-	"nand read.i 0x80000000 280000 500000; "	\
-	"bootm 0x80000000;"
+	"nand read.i 0x80007fc0 280000 500000; "	\
+	"bootm 0x80007fc0;"
 
 /*
  * Update the bootargs as necessary e.g. size of memory, partition and fstype
