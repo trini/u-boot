@@ -15,6 +15,10 @@
 #ifndef PMIC_h
 #define PMIC_H
 
+/*
+ * The PMIC on this board is a TPS65910.
+ */
+
 #define PMIC_SR_I2C_ADDR		0x12
 /* PMIC Register offsets */
 #define PMIC_VDD1_REG			0x21
@@ -27,7 +31,7 @@
 #define PMIC_VGAIN_SEL_MASK		(0x3 << 6)
 #define PMIC_ILMAX_MASK			(0x1 << 5)
 #define PMIC_TSTEP_MASK			(0x7 << 2)
-#define PMIC_ST_MASK			(0x3 << 0)
+#define PMIC_ST_MASK			(0x3)
 
 #define PMIC_REG_VGAIN_SEL_X1		(0x0 << 6)
 #define PMIC_REG_VGAIN_SEL_X1_0		(0x1 << 6)
@@ -46,22 +50,22 @@
 #define PMIC_REG_TSTEP_3_12		(0x6 << 2)
 #define PMIC_REG_TSTEP_2_5		(0x7 << 2)
 
-#define PMIC_REG_ST_OFF			(0x0 << 0)
-#define PMIC_REG_ST_ON_HI_POW		(0x1 << 0)
-#define PMIC_REG_ST_OFF_1		(0x2 << 0)
-#define PMIC_REG_ST_ON_LOW_POW		(0x3 << 0)
+#define PMIC_REG_ST_OFF			(0x0)
+#define PMIC_REG_ST_ON_HI_POW		(0x1)
+#define PMIC_REG_ST_OFF_1		(0x2)
+#define PMIC_REG_ST_ON_LOW_POW		(0x3)
 
 
 /* VDD2 & VDD1 voltage selection register. (VDD2_OP_REG & VDD1_OP_REG) */
-#define PMIC_OP_REG_SEL				(0x7F << 0)
+#define PMIC_OP_REG_SEL				(0x7F)
 
 #define PMIC_OP_REG_CMD_MASK			(0x1 << 7)
 #define PMIC_OP_REG_CMD_OP			(0x0 << 7)
 #define PMIC_OP_REG_CMD_SR			(0x1 << 7)
 
-#define PMIC_OP_REG_SEL_MASK			(0x7F << 0)
-#define PMIC_OP_REG_SEL_1_1_3			(0x2E << 0)	/* 1.1375 V */
-#define PMIC_OP_REG_SEL_1_2_6			(0x38 << 0)	/* 1.2625 V */
+#define PMIC_OP_REG_SEL_MASK			(0x7F)
+#define PMIC_OP_REG_SEL_1_1_3			(0x2E)	/* 1.1375 V */
+#define PMIC_OP_REG_SEL_1_2_6			(0x38)	/* 1.2625 V */
 
 /* Device control register . (DEVCTRL_REG) */
 #define PMIC_DEVCTRL_REG_SR_CTL_I2C_MASK	(0x1 << 4)
