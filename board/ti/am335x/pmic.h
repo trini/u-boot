@@ -20,6 +20,7 @@
  */
 
 #define PMIC_SR_I2C_ADDR		0x12
+#define PMIC_CTRL_I2C_ADDR		0x2D
 /* PMIC Register offsets */
 #define PMIC_VDD1_REG			0x21
 #define PMIC_VDD1_OP_REG		0x22

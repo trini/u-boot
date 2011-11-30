@@ -446,25 +446,25 @@ int voltage_update(unsigned int module, unsigned char vddx_op_vol_sel)
 		reg_offset = PMIC_VDD2_OP_REG;
 
 	/* Select VDDx OP   */
-	if (i2c_read(PMIC_SR_I2C_ADDR, reg_offset, 1, buf, 1))
+	if (i2c_read(PMIC_CTRL_I2C_ADDR, reg_offset, 1, buf, 1))
 		return 1;
 
 	buf[0] &= ~PMIC_OP_REG_CMD_MASK;
 
-	if (i2c_write(PMIC_SR_I2C_ADDR, reg_offset, 1, buf, 1))
+	if (i2c_write(PMIC_CTRL_I2C_ADDR, reg_offset, 1, buf, 1))
 		return 1;
 
 	/* Configure VDDx OP  Voltage */
-	if (i2c_read(PMIC_SR_I2C_ADDR, reg_offset, 1, buf, 1))
+	if (i2c_read(PMIC_CTRL_I2C_ADDR, reg_offset, 1, buf, 1))
 		return 1;
 
 	buf[0] &= ~PMIC_OP_REG_SEL_MASK;
 	buf[0] |= vddx_op_vol_sel;
 
-	if (i2c_write(PMIC_SR_I2C_ADDR, reg_offset, 1, buf, 1))
+	if (i2c_write(PMIC_CTRL_I2C_ADDR, reg_offset, 1, buf, 1))
 		return 1;
 
-	if (i2c_read(PMIC_SR_I2C_ADDR, reg_offset, 1, buf, 1))
+	if (i2c_read(PMIC_CTRL_I2C_ADDR, reg_offset, 1, buf, 1))
 		return 1;
 
 	if ((buf[0] & PMIC_OP_REG_SEL_MASK ) != vddx_op_vol_sel)
@@ -529,12 +529,22 @@ void spl_board_init(void)
 		/* Set MPU Frequency to 720MHz */
 		mpu_pll_config(MPUPLL_M_720);
 	} else {
+		uchar buf[4];
 		/*
 		 * EVM PMIC code.  All boards currently want an MPU voltage
 		 * of 1.2625V and CORE voltage of 1.1375V to operate at
 		 * 720MHz.
 		 */
-		if (i2c_probe(PMIC_SR_I2C_ADDR))
+		if (i2c_probe(PMIC_CTRL_I2C_ADDR))
+			return;
+
+		/* VDD1/2 voltage selection register access by control i/f */
+		if (i2c_read(PMIC_CTRL_I2C_ADDR, PMIC_DEVCTRL_REG, 1, buf, 1))
+			return;
+
+		buf[0] |= PMIC_DEVCTRL_REG_SR_CTL_I2C_SEL_CTL_I2C;
+
+		if (i2c_write(PMIC_CTRL_I2C_ADDR, PMIC_DEVCTRL_REG, 1, buf, 1))
 			return;
 
 		if (!voltage_update(MPU, PMIC_OP_REG_SEL_1_2_6) &&
