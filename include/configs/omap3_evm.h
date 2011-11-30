@@ -141,15 +141,22 @@
 	"usbtty=cdc_acm\0" \
 	"mmcdev=0\0" \
 	"console=ttyO0,115200n8\0" \
+	"optargs=\0" \
 	"mmcargs=setenv bootargs console=${console} " \
+		"${optargs} " \
 		"root=/dev/mmcblk0p2 rw " \
 		"rootfstype=ext3 rootwait\0" \
 	"nandargs=setenv bootargs console=${console} " \
+		"${optargs} " \
 		"root=/dev/mtdblock4 rw " \
 		"rootfstype=jffs2\0" \
 	"loadbootscript=fatload mmc ${mmcdev} ${loadaddr} boot.scr\0" \
 	"bootscript=echo Running bootscript from mmc ...; " \
 		"source ${loadaddr}\0" \
+	"bootenv=uEnv.txt\0" \
+	"loadbootenv=fatload mmc ${mmcdev} ${loadaddr} ${bootenv}\0" \
+	"importbootenv=echo Importing environment from mmc ...; " \
+		"env import -t $loadaddr $filesize\0" \
 	"loaduimage=fatload mmc ${mmcdev} ${kloadaddr} uImage\0" \
 	"mmcboot=echo Booting from mmc ...; " \
 		"run mmcargs; " \
@@ -164,6 +171,14 @@
 		"if run loadbootscript; then " \
 			"run bootscript; " \
 		"else " \
+			"if run loadbootenv; then " \
+				"echo Loaded environment from ${bootenv};" \
+				"run importbootenv;" \
+			"fi;" \
+			"if test -n $uenvcmd; then " \
+				"echo Running uenvcmd ...;" \
+				"run uenvcmd;" \
+			"fi;" \
 			"if run loaduimage; then " \
 				"run mmcboot; " \
 			"else run nandboot; " \
