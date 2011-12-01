@@ -181,7 +181,7 @@ int misc_init_r(void)
 
         if (get_cpu_family() == CPU_OMAP36XX) {
    		twl4030_power_mpu_init();
-	        set_mpu_clk(500);
+	        set_mpu_clk(1000);
 	}
 	return 0;
 }
