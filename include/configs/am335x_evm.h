@@ -54,11 +54,11 @@
 	"console=ttyO0,115200n8\0" \
 	"mmc_dev=0\0" \
 	"mmc_root=/dev/mmcblk0p2 rw\0" \
-	"nand_root=/dev/mtdblock7 rw\0" \
+	"nand_root=ubi0:rootfs rw ubi.mtd=7,2048\0" \
 	"spi_root=/dev/mtdblock4 rw\0" \
 	"nor_root=/dev/mtdblock3 rw\0" \
 	"mmc_root_fs_type=ext3 rootwait\0" \
-	"nand_root_fs_type=jffs2\0" \
+	"nand_root_fs_type=ubifs rootwait=1\0" \
 	"spi_root_fs_type=jffs2\0" \
 	"nor_root_fs_type=jffs2\0" \
 	"nand_src_addr=0x280000\0" \
