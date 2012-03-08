@@ -113,5 +113,8 @@
 #define AM335X_CPSW_BASE               0x4A100000
 #define AM335X_CPSW_MDIO_BASE          0x4A101000
 
+/* RTC base address */
+#define AM335X_RTC_BASE			0x44E3E000
+
 #endif /* __TI81XX_HARDWARE_H */
 

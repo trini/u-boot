@@ -110,6 +110,10 @@ DECLARE_GLOBAL_DATA_PTR;
 #define NO_OF_MAC_ADDR          3
 #define ETH_ALEN		6
 
+#define RTC_KICK0_REG		0x6c
+#define RTC_KICK1_REG		0x70
+#define RTC_OSC_REG		0x54
+
 struct am335x_baseboard_id {
 	unsigned int  magic;
 	char name[8];
@@ -295,6 +299,16 @@ static void init_timer(void)
 
 	/* Start the Timer */
 	__raw_writel(0x1, (DM_TIMER2_BASE + TCLR_REG));
+}
+
+static void rtc32k_enable(void)
+{
+	/* Unlock the rtc's registers */
+	__raw_writel(0x83e70b13, (AM335X_RTC_BASE + RTC_KICK0_REG));
+	__raw_writel(0x95a4f1e0, (AM335X_RTC_BASE + RTC_KICK1_REG));
+
+	/* Enable the RTC 32K OSC */
+	__raw_writel(0x48, (AM335X_RTC_BASE + RTC_OSC_REG));
 }
 #endif
 
@@ -574,6 +588,9 @@ void s_init(void)
 #ifdef CONFIG_SPL_BUILD
 	/* Setup the PLLs and the clocks for the peripherals */
 	pll_init();
+
+	/* Enable RTC32K clock */
+	rtc32k_enable();
 
 	/* UART softreset */
 	u32 regVal;

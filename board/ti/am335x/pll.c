@@ -137,6 +137,10 @@ static void per_clocks_enable(void)
 
 	__raw_writel(PRCM_MOD_EN, CM_PER_SPI1_CLKCTRL);
 	while (__raw_readl(CM_PER_SPI1_CLKCTRL) != PRCM_MOD_EN);
+
+	/* RTC */
+	__raw_writel(PRCM_MOD_EN, CM_RTC_RTC_CLKCTRL);
+	while (__raw_readl(CM_PER_SPI0_CLKCTRL) != PRCM_MOD_EN);
 }
 
 void mpu_pll_config(int mpupll_M)

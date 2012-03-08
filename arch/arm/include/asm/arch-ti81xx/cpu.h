@@ -236,6 +236,7 @@ struct gptimer {
 #define CM_WKUP				(PRCM_BASE + 0x400)
 #define CM_DPLL				(PRCM_BASE + 0x500)
 #define CM_DEVICE			(PRCM_BASE + 0x0700)
+#define CM_RTC				(PRCM_BASE + 0x0800)
 #define CM_CEFUSE			(PRCM_BASE + 0x0A00)
 #define PRM_DEVICE			(PRCM_BASE + 0x0F00)
 
@@ -312,6 +313,7 @@ struct gptimer {
 #define CM_PER_I2C1_CLKCTRL		(CM_PER + 0x48) /* I2C1 */
 #define CM_PER_I2C2_CLKCTRL		(CM_PER + 0x44) /* I2C2 */
 #define CM_WKUP_GPIO0_CLKCTRL		(CM_WKUP + 0x8) /* GPIO0 */
+#define CM_RTC_RTC_CLKCTRL		(CM_RTC + 0x0) /* RTC */
 
 #define CM_PER_MMC0_CLKCTRL     	(CM_PER + 0x3C)
 #define CM_PER_MMC1_CLKCTRL     	(CM_PER + 0xF4)
