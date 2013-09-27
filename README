@@ -3517,6 +3517,12 @@ FIT uImage format:
 		Enable booting directly to an OS from SPL.
 		See also: doc/README.falcon
 
+		CONFIG_SPL_BOOTCOUNT_LIMIT
+		Optional part of CONFIG_SPL_OS_BOOT and requires
+		CONFIG_SPL_ENV_SUPPORT.  Adds the bootcount facility to
+		SPL.  It is strongly encouraged to not use bootcount in
+		both SPL and full U-Boot.
+
 		CONFIG_SPL_DISPLAY_PRINT
 		For ARM, enable an optional function to print more information
 		about the running system.

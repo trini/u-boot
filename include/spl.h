@@ -39,6 +39,7 @@ void spl_parse_image_header(const struct image_header *header);
 void spl_board_prepare_for_linux(void);
 void __noreturn jump_to_image_linux(void *arg);
 int spl_start_uboot(void);
+int spl_bootcount_limit_exceeded(void);
 void spl_display_print(void);
 
 /* NAND SPL functions */

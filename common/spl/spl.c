@@ -38,6 +38,10 @@ static bd_t bdata __attribute__ ((section(".data")));
  *
  * Please implement your own board specific funcion to do this.
  *
+ * If both CONFIG_SPL_BOOTCOUNT_LIMIT and CONFIG_SPL_ENV_SUPPORT are
+ * set this function is responsible for calling
+ * spl_bootcount_limit_exceeded();
+ *
  * RETURN
  * 0 to not start u-boot
  * positive if u-boot should start
@@ -49,6 +53,29 @@ __weak int spl_start_uboot(void)
 	puts("SPL: Direct Linux boot not active!\n");
 	return 1;
 }
+
+#if defined(CONFIG_SPL_BOOTCOUNT_LIMIT) && defined(CONFIG_SPL_ENV_SUPPORT)
+/*
+ * Determine if we have exceeded our bootlimit.
+ *
+ * @return 1 if we have exceeded our limit, 0 otherwise.
+ */
+int spl_bootcount_limit_exceeded(void)
+{
+	unsigned long bootcount = 0;
+	unsigned long bootlimit = 0;
+
+	bootcount = bootcount_load();
+	bootcount++;
+	bootcount_store (bootcount);
+	setenv_ulong("bootcount", bootcount);
+	bootlimit = getenv_ulong("bootlimit", 10, 0);
+	printf("bootcount: %ld\nbootlimit: %ld\n", bootcount, bootlimit);
+	if (bootlimit)
+		return bootcount > bootlimit;
+	return 0;
+}
+#endif /* CONFIG_BOOTCOUNT_LIMIT && CONFIG_SPL_ENV_SUPPORT */
 #endif
 
 /*
