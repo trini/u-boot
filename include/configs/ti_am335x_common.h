@@ -46,6 +46,7 @@
  * environment to a non-zero value and enable CONFIG_BOOTCOUNT_LIMIT
  * in the board config.
  */
+#define CONFIG_SPL_BOOTCOUNT_LIMIT
 #define CONFIG_SYS_BOOTCOUNT_ADDR	0x44E3E000
 
 /* Enable the HW watchdog, since we can use this with bootcount */

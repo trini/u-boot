@@ -202,6 +202,10 @@ int spl_start_uboot(void)
 #ifdef CONFIG_SPL_ENV_SUPPORT
 	env_init();
 	env_relocate_spec();
+#if defined(CONFIG_SPL_BOOTCOUNT_LIMIT) && defined(CONFIG_SPL_ENV_SUPPORT)
+	if (spl_bootcount_limit_exceeded())
+		return 1;
+#endif
 	if (getenv_yesno("boot_os") != 1)
 		return 1;
 #endif
