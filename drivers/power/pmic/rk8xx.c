@@ -12,26 +12,28 @@
 #include <power/pmic.h>
 
 static struct reg_data rk817_init_reg[] = {
-/* enable the under-voltage protection,
- * the under-voltage protection will shutdown the LDO3 and reset the PMIC
- */
-	{ RK817_BUCK4_CMIN, 0x60, 0x60},
+	/*
+	 * Enable the under-voltage protection, which
+	 * will shutdown the LDO3 and reset the PMIC.
+	 */
+	{ RK817_BUCK4_CMIN, 0x60, 0x60 },
 };
 
+#if CONFIG_IS_ENABLED(PMIC_CHILDREN)
 static const struct pmic_child_info pmic_children_info[] = {
-	{ .prefix = "DCDC_REG", .driver = "rk8xx_buck"},
-	{ .prefix = "LDO_REG", .driver = "rk8xx_ldo"},
-	{ .prefix = "SWITCH_REG", .driver = "rk8xx_switch"},
+	{ .prefix = "DCDC_REG", .driver = "rk8xx_buck" },
+	{ .prefix = "LDO_REG", .driver = "rk8xx_ldo" },
+	{ .prefix = "SWITCH_REG", .driver = "rk8xx_switch" },
 	{ },
 };
+#endif /* PMIC_CHILDREN */
 
 static int rk8xx_reg_count(struct udevice *dev)
 {
 	return RK808_NUM_OF_REGS;
 }
 
-static int rk8xx_write(struct udevice *dev, uint reg, const uint8_t *buff,
-			  int len)
+static int rk8xx_write(struct udevice *dev, uint reg, const uint8_t *buff, int len)
 {
 	int ret;
 
@@ -79,7 +81,7 @@ static int rk8xx_bind(struct udevice *dev)
 	/* Always return success for this device */
 	return 0;
 }
-#endif
+#endif /* PMIC_CHILDREN */
 
 static int rk8xx_probe(struct udevice *dev)
 {
