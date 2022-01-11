@@ -7,13 +7,13 @@
  * Ported to U-Boot by:
  * Anton Schubert <anton.schubert@gmx.de>
  * Stefan Roese <sr@denx.de>
+ * Pali Rohár <pali@kernel.org>
  */
 
 #include <common.h>
 #include <dm.h>
 #include <log.h>
 #include <malloc.h>
-#include <asm/global_data.h>
 #include <dm/device-internal.h>
 #include <dm/lists.h>
 #include <dm/of_access.h>
@@ -25,8 +25,6 @@
 #include <linux/errno.h>
 #include <linux/ioport.h>
 #include <linux/mbus.h>
-
-DECLARE_GLOBAL_DATA_PTR;
 
 /* PCIe unit register offsets */
 #define SELECT(x, n)			((x >> n) & 1UL)
@@ -88,7 +86,7 @@ struct mvebu_pcie {
 	unsigned int mem_attr;
 	unsigned int io_target;
 	unsigned int io_attr;
-	u32 cfgcache[0x34 - 0x10];
+	u32 cfgcache[(0x3c - 0x10) / 4];
 };
 
 /*
@@ -167,20 +165,20 @@ static int mvebu_pcie_read_config(const struct udevice *bus, pci_dev_t bdf,
 	}
 
 	/*
-	 * mvebu has different internal registers mapped into PCI config space
-	 * in range 0x10-0x34 for PCI bridge, so do not access PCI config space
-	 * for this range and instead read content from driver virtual cfgcache
+	 * The configuration space of the PCI Bridge on primary (first) bus is
+	 * of Type 0 but the BAR registers (including ROM BAR) don't have the
+	 * same meaning as in the PCIe specification. Therefore do not access
+	 * BAR registers and non-common registers (those which have different
+	 * meaning for Type 0 and Type 1 config space) of the PCI Bridge and
+	 * instead read their content from driver virtual cfgcache[].
 	 */
-	if (busno == pcie->first_busno && offset >= 0x10 && offset < 0x34) {
+	if (busno == pcie->first_busno && ((offset >= 0x10 && offset < 0x34) ||
+					   (offset >= 0x38 && offset < 0x3c))) {
 		data = pcie->cfgcache[(offset - 0x10) / 4];
 		debug("(addr,size,val)=(0x%04x, %d, 0x%08x) from cfgcache\n",
 		      offset, size, data);
 		*valuep = pci_conv_32_to_size(data, offset, size);
 		return 0;
-	} else if (busno == pcie->first_busno &&
-		   (offset & ~3) == PCI_ROM_ADDRESS1) {
-		/* mvebu has Expansion ROM Base Address (0x38) at offset 0x30 */
-		offset -= PCI_ROM_ADDRESS1 - PCIE_EXP_ROM_BAR_OFF;
 	}
 
 	/*
@@ -247,17 +245,21 @@ static int mvebu_pcie_write_config(struct udevice *bus, pci_dev_t bdf,
 	}
 
 	/*
-	 * mvebu has different internal registers mapped into PCI config space
-	 * in range 0x10-0x34 for PCI bridge, so do not access PCI config space
-	 * for this range and instead write content to driver virtual cfgcache
+	 * As explained in mvebu_pcie_read_config(), PCI Bridge Type 1 specific
+	 * config registers are not available, so we write their content only
+	 * into driver virtual cfgcache[].
+	 * And as explained in mvebu_pcie_probe(), mvebu has its own specific
+	 * way for configuring primary and secondary bus numbers.
 	 */
-	if (busno == pcie->first_busno && offset >= 0x10 && offset < 0x34) {
+	if (busno == pcie->first_busno && ((offset >= 0x10 && offset < 0x34) ||
+					   (offset >= 0x38 && offset < 0x3c))) {
 		debug("Writing to cfgcache only\n");
 		data = pcie->cfgcache[(offset - 0x10) / 4];
 		data = pci_conv_size_to_32(data, value, offset, size);
 		/* mvebu PCI bridge does not have configurable bars */
 		if ((offset & ~3) == PCI_BASE_ADDRESS_0 ||
-		    (offset & ~3) == PCI_BASE_ADDRESS_1)
+		    (offset & ~3) == PCI_BASE_ADDRESS_1 ||
+		    (offset & ~3) == PCI_ROM_ADDRESS1)
 			data = 0x0;
 		pcie->cfgcache[(offset - 0x10) / 4] = data;
 		/* mvebu has its own way how to set PCI primary bus number */
@@ -275,10 +277,6 @@ static int mvebu_pcie_write_config(struct udevice *bus, pci_dev_t bdf,
 			      pcie->sec_busno);
 		}
 		return 0;
-	} else if (busno == pcie->first_busno &&
-		   (offset & ~3) == PCI_ROM_ADDRESS1) {
-		/* mvebu has Expansion ROM Base Address (0x38) at offset 0x30 */
-		offset -= PCI_ROM_ADDRESS1 - PCIE_EXP_ROM_BAR_OFF;
 	}
 
 	/*
@@ -313,7 +311,9 @@ static int mvebu_pcie_write_config(struct udevice *bus, pci_dev_t bdf,
 
 /*
  * Setup PCIE BARs and Address Decode Wins:
- * BAR[0,2] -> disabled, BAR[1] -> covers all DRAM banks
+ * BAR[0] -> internal registers
+ * BAR[1] -> covers all DRAM banks
+ * BAR[2] -> disabled
  * WIN[0-3] -> DRAM bank[0-3]
  */
 static void mvebu_pcie_setup_wins(struct mvebu_pcie *pcie)
@@ -364,6 +364,10 @@ static void mvebu_pcie_setup_wins(struct mvebu_pcie *pcie)
 	writel(0, pcie->base + PCIE_BAR_HI_OFF(1));
 	writel(((size - 1) & 0xffff0000) | 0x1,
 	       pcie->base + PCIE_BAR_CTRL_OFF(1));
+
+	/* Setup BAR[0] to internal registers. */
+	writel(SOC_REGS_PHY_BASE, pcie->base + PCIE_BAR_LO_OFF(0));
+	writel(0, pcie->base + PCIE_BAR_HI_OFF(0));
 }
 
 static int mvebu_pcie_probe(struct udevice *dev)
@@ -384,13 +388,20 @@ static int mvebu_pcie_probe(struct udevice *dev)
 	 * U-Boot cannot recognize as P2P Bridge.
 	 *
 	 * Note that this mvebu PCI Bridge does not have compliant Type 1
-	 * Configuration Space. Header Type is reported as Type 0 and in
-	 * range 0x10-0x34 it has aliased internal mvebu registers 0x10-0x34
-	 * (e.g. PCIE_BAR_LO_OFF) and register 0x38 is reserved.
+	 * Configuration Space. Header Type is reported as Type 0 and it
+	 * has format of Type 0 config space.
 	 *
-	 * Driver for this range redirects access to virtual cfgcache[] buffer
-	 * which avoids changing internal mvebu registers. And changes Header
-	 * Type response value to Type 1.
+	 * Moreover Type 0 BAR registers (ranges 0x10 - 0x28 and 0x30 - 0x34)
+	 * have the same format in Marvell's specification as in PCIe
+	 * specification, but their meaning is totally different and they do
+	 * different things: they are aliased into internal mvebu registers
+	 * (e.g. PCIE_BAR_LO_OFF) and these should not be changed or
+	 * reconfigured by pci device drivers.
+	 *
+	 * So our driver converts Type 0 config space to Type 1 and reports
+	 * Header Type as Type 1. Access to BAR registers and to non-existent
+	 * Type 1 registers is redirected to the virtual cfgcache[] buffer,
+	 * which avoids changing unrelated registers.
 	 */
 	reg = readl(pcie->base + PCIE_DEV_REV_OFF);
 	reg &= ~0xffffff00;
@@ -437,9 +448,9 @@ static int mvebu_pcie_probe(struct udevice *dev)
 
 	if (mvebu_mbus_add_window_by_id(pcie->mem_target, pcie->mem_attr,
 					(phys_addr_t)pcie->mem.start,
-					MBUS_PCI_MEM_SIZE)) {
+					resource_size(&pcie->mem))) {
 		printf("PCIe unable to add mbus window for mem at %08x+%08x\n",
-		       (u32)pcie->mem.start, MBUS_PCI_MEM_SIZE);
+		       (u32)pcie->mem.start, (unsigned)resource_size(&pcie->mem));
 	}
 
 	pcie->io.start = (u32)mvebu_pcie_iobase;
@@ -448,9 +459,9 @@ static int mvebu_pcie_probe(struct udevice *dev)
 
 	if (mvebu_mbus_add_window_by_id(pcie->io_target, pcie->io_attr,
 					(phys_addr_t)pcie->io.start,
-					MBUS_PCI_IO_SIZE)) {
+					resource_size(&pcie->io))) {
 		printf("PCIe unable to add mbus window for IO at %08x+%08x\n",
-		       (u32)pcie->io.start, MBUS_PCI_IO_SIZE);
+		       (u32)pcie->io.start, (unsigned)resource_size(&pcie->io));
 	}
 
 	/* Setup windows and configure host bridge */
@@ -458,18 +469,14 @@ static int mvebu_pcie_probe(struct udevice *dev)
 
 	/* PCI memory space */
 	pci_set_region(hose->regions + 0, pcie->mem.start,
-		       pcie->mem.start, MBUS_PCI_MEM_SIZE, PCI_REGION_MEM);
+		       pcie->mem.start, resource_size(&pcie->mem), PCI_REGION_MEM);
 	pci_set_region(hose->regions + 1,
 		       0, 0,
 		       gd->ram_size,
 		       PCI_REGION_MEM | PCI_REGION_SYS_MEMORY);
 	pci_set_region(hose->regions + 2, pcie->io.start,
-		       pcie->io.start, MBUS_PCI_IO_SIZE, PCI_REGION_IO);
+		       pcie->io.start, resource_size(&pcie->io), PCI_REGION_IO);
 	hose->region_count = 3;
-
-	/* Set BAR0 to internal registers */
-	writel(SOC_REGS_PHY_BASE, pcie->base + PCIE_BAR_LO_OFF(0));
-	writel(0, pcie->base + PCIE_BAR_HI_OFF(0));
 
 	/* PCI Bridge support 32-bit I/O and 64-bit prefetch mem addressing */
 	pcie->cfgcache[(PCI_IO_BASE - 0x10) / 4] =

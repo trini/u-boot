@@ -12,6 +12,14 @@
 struct ofnode_phandle_args;
 
 /**
+ * struct phy_uclass_priv - Holds information about a device used by the uclass
+ */
+struct phy_uclass_priv {
+	unsigned int init_count;
+	unsigned int power_on_count;
+};
+
+/**
  * struct phy - A handle to (allowing control of) a single phy port.
  *
  * Clients provide storage for phy handles. The content of the structure is

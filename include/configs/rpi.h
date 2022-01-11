@@ -44,7 +44,6 @@
 /* GPIO */
 #define CONFIG_BCM2835_GPIO
 /* LCD */
-#define CONFIG_LCD_DT_SIMPLEFB
 #define CONFIG_VIDEO_BCM2835
 
 /* DFU over USB/UDC */
@@ -137,7 +136,8 @@
 #if CONFIG_IS_ENABLED(CMD_MMC)
 	#define BOOT_TARGET_MMC(func) \
 		func(MMC, mmc, 0) \
-		func(MMC, mmc, 1)
+		func(MMC, mmc, 1) \
+		func(MMC, mmc, 2)
 #else
 	#define BOOT_TARGET_MMC(func)
 #endif

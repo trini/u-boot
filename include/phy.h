@@ -22,7 +22,7 @@
 struct udevice;
 
 #define PHY_FIXED_ID		0xa5a55a5a
-#define PHY_NCSI_ID            0xbeefcafe
+#define PHY_NCSI_ID		0xbeefcafe
 
 /*
  * There is no actual id for this.

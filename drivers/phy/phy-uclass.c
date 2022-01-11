@@ -47,6 +47,7 @@ int generic_phy_get_by_index_nodev(ofnode node, int index, struct phy *phy)
 
 	assert(phy);
 	phy->dev = NULL;
+
 	ret = ofnode_parse_phandle_with_args(node, "phys", "#phy-cells", 0,
 					     index, &args);
 	if (ret) {
@@ -85,13 +86,10 @@ int generic_phy_get_by_index_nodev(ofnode node, int index, struct phy *phy)
 		ret = generic_phy_xlate_offs_flags(phy, &args);
 	if (ret) {
 		debug("of_xlate() failed: %d\n", ret);
-		goto err;
+		return ret;
 	}
 
 	return 0;
-
-err:
-	return ret;
 }
 
 int generic_phy_get_by_index(struct udevice *dev, int index,
@@ -118,6 +116,7 @@ int generic_phy_get_by_name(struct udevice *dev, const char *phy_name,
 
 int generic_phy_init(struct phy *phy)
 {
+	struct phy_uclass_priv *priv = dev_get_uclass_priv(phy->dev);
 	struct phy_ops const *ops;
 	int ret;
 
@@ -126,6 +125,14 @@ int generic_phy_init(struct phy *phy)
 	ops = phy_dev_ops(phy->dev);
 	if (!ops->init)
 		return 0;
+
+	priv->init_count++;
+	if (priv->init_count != 1) {
+		dev_dbg(phy->dev, "PHY: Skipped init for %s: %u.\n",
+			phy->dev->name, priv->init_count);
+		return 0;
+	}
+
 	ret = ops->init(phy);
 	if (ret)
 		dev_err(phy->dev, "PHY: Failed to init %s: %d.\n",
@@ -154,6 +161,7 @@ int generic_phy_reset(struct phy *phy)
 
 int generic_phy_exit(struct phy *phy)
 {
+	struct phy_uclass_priv *priv = dev_get_uclass_priv(phy->dev);
 	struct phy_ops const *ops;
 	int ret;
 
@@ -162,6 +170,19 @@ int generic_phy_exit(struct phy *phy)
 	ops = phy_dev_ops(phy->dev);
 	if (!ops->exit)
 		return 0;
+
+	if (priv->init_count == 0) {
+		dev_dbg(phy->dev, "PHY: Skipped exit for %s: no init done.\n",
+			phy->dev->name);
+		return 0;
+	}
+	priv->init_count--;
+	if (priv->init_count != 0) {
+		dev_dbg(phy->dev, "PHY: Skipped exit for %s: %u.\n",
+			phy->dev->name, priv->init_count);
+		return 0;
+	}
+
 	ret = ops->exit(phy);
 	if (ret)
 		dev_err(phy->dev, "PHY: Failed to exit %s: %d.\n",
@@ -172,6 +193,7 @@ int generic_phy_exit(struct phy *phy)
 
 int generic_phy_power_on(struct phy *phy)
 {
+	struct phy_uclass_priv *priv = dev_get_uclass_priv(phy->dev);
 	struct phy_ops const *ops;
 	int ret;
 
@@ -180,6 +202,14 @@ int generic_phy_power_on(struct phy *phy)
 	ops = phy_dev_ops(phy->dev);
 	if (!ops->power_on)
 		return 0;
+
+	priv->power_on_count++;
+	if (priv->power_on_count != 1) {
+		dev_dbg(phy->dev, "PHY: Skipped power-on for %s: %u.\n",
+			phy->dev->name, priv->power_on_count);
+		return 0;
+	}
+
 	ret = ops->power_on(phy);
 	if (ret)
 		dev_err(phy->dev, "PHY: Failed to power on %s: %d.\n",
@@ -190,6 +220,7 @@ int generic_phy_power_on(struct phy *phy)
 
 int generic_phy_power_off(struct phy *phy)
 {
+	struct phy_uclass_priv *priv = dev_get_uclass_priv(phy->dev);
 	struct phy_ops const *ops;
 	int ret;
 
@@ -198,6 +229,20 @@ int generic_phy_power_off(struct phy *phy)
 	ops = phy_dev_ops(phy->dev);
 	if (!ops->power_off)
 		return 0;
+
+	if (priv->power_on_count == 0) {
+		dev_dbg(phy->dev,
+			"PHY: Skipped power-off for %s: not powered on.\n",
+			phy->dev->name);
+		return 0;
+	}
+	priv->power_on_count--;
+	if (priv->power_on_count != 0) {
+		dev_dbg(phy->dev, "PHY: Skipped power-off for %s: %u.\n",
+			phy->dev->name, priv->power_on_count);
+		return 0;
+	}
+
 	ret = ops->power_off(phy);
 	if (ret)
 		dev_err(phy->dev, "PHY: Failed to power off %s: %d.\n",
@@ -313,7 +358,18 @@ int generic_phy_power_off_bulk(struct phy_bulk *bulk)
 	return ret;
 }
 
+static int generic_phy_pre_probe(struct udevice *dev)
+{
+	struct phy_uclass_priv *priv = dev_get_uclass_priv(dev);
+
+	priv->init_count = 0;
+	priv->power_on_count = 0;
+	return 0;
+}
+
 UCLASS_DRIVER(phy) = {
 	.id		= UCLASS_PHY,
 	.name		= "phy",
+	.pre_probe	= generic_phy_pre_probe,
+	.per_device_auto	= sizeof(struct phy_uclass_priv),
 };

@@ -9,13 +9,16 @@ Board-specific doc
    actions/index
    advantech/index
    AndesTech/index
+   allwinner/index
    amlogic/index
    apple/index
+   armltd/index
    atmel/index
    congatec/index
    coreboot/index
    emulation/index
    google/index
+   highbank/index
    intel/index
    kontron/index
    microchip/index

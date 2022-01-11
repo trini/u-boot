@@ -72,7 +72,7 @@ struct msg_get_clock_rate {
 #endif
 
 /*
- * https://www.raspberrypi.org/documentation/hardware/raspberrypi/revision-codes/README.md
+ * https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#raspberry-pi-revision-codes
  */
 struct rpi_model {
 	const char *name;
@@ -156,6 +156,11 @@ static const struct rpi_model rpi_models_new_scheme[] = {
 		"4 Model B",
 		DTB_DIR "bcm2711-rpi-4-b.dtb",
 		true,
+	},
+	[0x12] = {
+		"Zero 2 W",
+		DTB_DIR "bcm2837-rpi-zero-2.dtb",
+		false,
 	},
 	[0x13] = {
 		"400",
@@ -505,7 +510,7 @@ int ft_board_setup(void *blob, struct bd_info *bd)
 
 	node = fdt_node_offset_by_compatible(blob, -1, "simple-framebuffer");
 	if (node < 0)
-		lcd_dt_simplefb_add_node(blob);
+		fdt_simplefb_add_node(blob);
 
 #ifdef CONFIG_EFI_LOADER
 	/* Reserve the spin table */
