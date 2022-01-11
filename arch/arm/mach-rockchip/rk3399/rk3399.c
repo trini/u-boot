@@ -248,14 +248,9 @@ void __weak led_setup(void)
 {
 }
 
-void __weak power_setup(void)
-{
-}
-
 void spl_board_init(void)
 {
 	led_setup();
-	power_setup();
 
 #if defined(SPL_GPIO)
 	struct rockchip_cru *cru = rockchip_get_cru();

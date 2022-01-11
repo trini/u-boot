@@ -16,10 +16,14 @@
 #include <power/pmic.h>
 #include <power/regulator.h>
 
+#ifndef CONFIG_SPL_BUILD
+#define ENABLE_DRIVER
+#endif
+
 /* Not used or exisit register and configure */
 #define NA			0xff
 
-/* Field definitions */
+/* Field Definitions */
 #define RK808_BUCK_VSEL_MASK	0x3f
 #define RK808_BUCK4_VSEL_MASK	0xf
 #define RK808_LDO_VSEL_MASK	0x1f
@@ -141,7 +145,7 @@ static const struct rk8xx_reg_info rk818_buck[] = {
 	{ 1800000, 100000, REG_BUCK4_ON_VSEL, REG_BUCK4_SLP_VSEL, REG_BUCK4_CONFIG, RK818_BUCK4_VSEL_MASK, },
 };
 
-#if CONFIG_IS_ENABLED(PMIC_CHILDREN)
+#ifdef ENABLE_DRIVER
 static const struct rk8xx_reg_info rk808_ldo[] = {
 	{ 1800000, 100000, REG_LDO1_ON_VSEL, REG_LDO1_SLP_VSEL, NA, RK808_LDO_VSEL_MASK, },
 	{ 1800000, 100000, REG_LDO2_ON_VSEL, REG_LDO2_SLP_VSEL, NA, RK808_LDO_VSEL_MASK, },
@@ -202,9 +206,8 @@ static const struct rk8xx_reg_info rk818_ldo[] = {
 	{  800000, 100000, REG_LDO7_ON_VSEL, REG_LDO7_SLP_VSEL, NA, RK818_LDO_VSEL_MASK, },
 	{ 1800000, 100000, REG_LDO8_ON_VSEL, REG_LDO8_SLP_VSEL, NA, RK818_LDO_VSEL_MASK, },
 };
-#endif /* PMIC_CHILDREN */
+#endif
 
-#ifdef CONFIG_SPL_BUILD
 static const u16 rk818_chrg_cur_input_array[] = {
 	450, 800, 850, 1000, 1250, 1500, 1750, 2000, 2250, 2500, 2750, 3000
 };
@@ -212,7 +215,6 @@ static const u16 rk818_chrg_cur_input_array[] = {
 static const uint rk818_chrg_shutdown_vsel_array[] = {
 	2780000, 2850000, 2920000, 2990000, 3060000, 3130000, 3190000, 3260000
 };
-#endif /* CONFIG_SPL_BUILD */
 
 static const struct rk8xx_reg_info *get_buck_reg(struct udevice *pmic,
 						 int num, int uvolt)
@@ -355,7 +357,7 @@ static int _buck_set_enable(struct udevice *pmic, int buck, bool enable)
 	return ret;
 }
 
-#if CONFIG_IS_ENABLED(PMIC_CHILDREN)
+#ifdef ENABLE_DRIVER
 static int _buck_set_suspend_value(struct udevice *pmic, int buck, int uvolt)
 {
 	const struct rk8xx_reg_info *info = get_buck_reg(pmic, buck, uvolt);
@@ -1119,9 +1121,8 @@ U_BOOT_DRIVER(rk8xx_switch) = {
 	.ops = &rk8xx_switch_ops,
 	.probe = rk8xx_switch_probe,
 };
-#endif /* PMIC_CHILDREN */
+#endif
 
-#ifdef CONFIG_SPL_BUILD
 int rk8xx_spl_configure_buck(struct udevice *pmic, int buck, int uvolt)
 {
 	int ret;
@@ -1152,6 +1153,6 @@ int rk818_spl_configure_usb_chrg_shutdown(struct udevice *pmic, int uvolt)
 		if (uvolt <= rk818_chrg_shutdown_vsel_array[i])
 			break;
 
-	return pmic_clrsetbits(pmic, REG_USB_CTRL, RK818_USB_CHG_SD_VSEL_MASK, i);
+	return pmic_clrsetbits(pmic, REG_USB_CTRL, RK818_USB_CHG_SD_VSEL_MASK,
+			       i);
 }
-#endif /* CONFIG_SPL_BUILD */
