@@ -251,7 +251,7 @@ int stdio_register(struct stdio_dev *dev)
 int stdio_deregister_dev(struct stdio_dev *dev, int force)
 {
 	struct list_head *pos;
-	char temp_names[3][16];
+	char temp_names[3][32];
 	int i;
 
 	/* get stdio devices (ListRemoveItem changes the dev list) */
