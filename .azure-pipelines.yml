@@ -11,15 +11,15 @@ variables:
   container_option: -u 0
   work_dir: /u
   # We define all of these as variables so we can easily reference them twice
-  am33xx_kirkwood_ls1_mvebu_omap: "am33xx kirkwood ls1 mvebu omap -x siemens,freescale"
-  amlogic_bcm_boundary_engicam_siemens_technexion_oradex: "amlogic bcm boundary engicam siemens technexion toradex -x mips"
+  am33xx_kirkwood_ls1_mvebu_omap_sun7i: "am33xx kirkwood ls1 mvebu omap sun7i -x siemens,freescale"
+  amlogic_bcm_boundary_engicam_siemens_technexion_toradex: "amlogic bcm boundary engicam siemens technexion toradex -x mips"
   arm_nxp_minus_imx_and_at91: "at91 freescale -x powerpc,m68k,imx,mx"
   imx: "mx imx -x boundary,engicam,technexion,toradex"
   rk: "rk"
-  sunxi: "sunxi"
-  powerpc: "powerpc"
-  arm_catch_all: "arm -x aarch64,am33xx,at91,bcm,ls1,kirkwood,mvebu,omap,rk,siemens,mx,sunxi,technexion,toradex"
-  aarch64_catch_all: "aarch64 -x amlogic,bcm,engicam,imx,ls1,ls2,lx216,mvebu,rk,siemens,sunxi,toradex"
+  sunxi: "sunxi -x sun7i"
+  k3_powerpc: "k3 powerpc"
+  arm_catch_all: "arm -x aarch64,am33xx,at91,bcm,ls1,k3,kirkwood,mvebu,omap,rk,siemens,mx,sunxi,technexion,toradex"
+  aarch64_catch_all: "aarch64 -x amlogic,bcm,engicam,imx,k3,ls1,ls2,lx216,mvebu,rk,siemens,sunxi,toradex"
   everything_but_arm_and_powerpc: "arc m68k microblaze mips nios2 riscv sandbox sh x86 xtensa -x arm,powerpc"
 
 stages:
@@ -213,13 +213,13 @@ stages:
           # First get the total number of boards
           total=$(tools/buildman/buildman ${BMANARGS} | grep "Total boards to build for each commit" | cut -d ' ' -f 8)
           # Now build up the list of what each job built.
-          built="$(tools/buildman/buildman ${BMANARGS} $(am33xx_kirkwood_ls1_mvebu_omap) | grep '^   ')"
-          built="$built $(tools/buildman/buildman ${BMANARGS} $(amlogic_bcm_boundary_engicam_siemens_technexion_oradex) | grep '^   ')"
+          built="$(tools/buildman/buildman ${BMANARGS} $(am33xx_kirkwood_ls1_mvebu_omap_sun7i) | grep '^   ')"
+          built="$built $(tools/buildman/buildman ${BMANARGS} $(amlogic_bcm_boundary_engicam_siemens_technexion_toradex) | grep '^   ')"
           built="$built $(tools/buildman/buildman ${BMANARGS} $(arm_nxp_minus_imx_and_at91) | grep '^   ')"
           built="$built $(tools/buildman/buildman ${BMANARGS} $(imx) | grep '^   ')"
           built="$built $(tools/buildman/buildman ${BMANARGS} $(rk) | grep '^   ')"
           built="$built $(tools/buildman/buildman ${BMANARGS} $(sunxi) | grep '^   ')"
-          built="$built $(tools/buildman/buildman ${BMANARGS} $(powerpc) | grep '^   ')"
+          built="$built $(tools/buildman/buildman ${BMANARGS} $(k3_powerpc) | grep '^   ')"
           built="$built $(tools/buildman/buildman ${BMANARGS} $(arm_catch_all) | grep '^   ')"
           built="$built $(tools/buildman/buildman ${BMANARGS} $(aarch64_catch_all) | grep '^   ')"
           built="$built $(tools/buildman/buildman ${BMANARGS} $(everything_but_arm_and_powerpc) | grep '^   ')"
@@ -611,10 +611,10 @@ stages:
       # We split the world up in to 10 jobs as we can have at most 10
       # parallel jobs going on the free tier of Azure.
       matrix:
-        am33xx_kirkwood_ls1_mvebu_omap:
-          BUILDMAN: $(am33xx_kirkwood_ls1_mvebu_omap)
-        amlogic_bcm_boundary_engicam_siemens_technexion_oradex:
-          BUILDMAN: $(amlogic_bcm_boundary_engicam_siemens_technexion_oradex)
+        am33xx_kirkwood_ls1_mvebu_omap_sun7i:
+          BUILDMAN: $(am33xx_kirkwood_ls1_mvebu_omap_sun7i)
+        amlogic_bcm_boundary_engicam_siemens_technexion_toradex:
+          BUILDMAN: $(amlogic_bcm_boundary_engicam_siemens_technexion_toradex)
         arm_nxp_minus_imx_and_at91:
           BUILDMAN: $(arm_nxp_minus_imx_and_at91)
         imx:
@@ -623,8 +623,8 @@ stages:
           BUILDMAN: $(rk)
         sunxi:
           BUILDMAN: $(sunxi)
-        powerpc:
-          BUILDMAN: $(powerpc)
+        k3_powerpc:
+          BUILDMAN: $(k3_powerpc)
         arm_catch_all:
           BUILDMAN: $(arm_catch_all)
         aarch64_catch_all:
