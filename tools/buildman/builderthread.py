@@ -152,11 +152,12 @@ class BuilderThread(threading.Thread):
         per_board_out_dir: True to build in a separate persistent directory per
             board rather than a thread-specific directory
         show_bloat: Use 'nm' to determine function sizes for later use
+        no_outputs: Do not keep any generated files from the build
         test_exception: Used for testing; True to raise an exception instead of
             reporting the build result
     """
     def __init__(self, builder, thread_num, mrproper, per_board_out_dir,
-                 show_bloat, test_exception=False):
+                 show_bloat, no_outputs, test_exception=False):
         """Set up a new builder thread"""
         threading.Thread.__init__(self)
         self.builder = builder
@@ -164,6 +165,7 @@ class BuilderThread(threading.Thread):
         self.mrproper = mrproper
         self.per_board_out_dir = per_board_out_dir
         self.show_bloat = show_bloat
+        self.no_outputs = no_outputs
         self.test_exception = test_exception
         self.toolchain = None
 
@@ -567,7 +569,7 @@ class BuilderThread(threading.Thread):
 
         done_file = self.builder.get_done_file(result.commit_upto,
                 result.brd.target)
-        if result.toolchain:
+        if result.toolchain and not self.no_outputs:
             # Write the build result and toolchain information.
             with open(done_file, 'w', encoding='utf-8') as outf:
                 if maybe_aborted:
@@ -651,26 +653,27 @@ class BuilderThread(threading.Thread):
                                 result.brd.target)
                 with open(sizes, 'w', encoding='utf-8') as outf:
                     print('\n'.join(lines), file=outf)
-        else:
+
+            if not work_in_output:
+                # Write out the configuration files, with a special case for SPL
+                for dirname in ['', 'spl', 'tpl']:
+                    copy_files(
+                        result.out_dir, build_dir, dirname,
+                        ['u-boot.cfg', 'spl/u-boot-spl.cfg', 'tpl/u-boot-tpl.cfg',
+                         '.config', 'include/autoconf.mk',
+                         'include/generated/autoconf.h'])
+
+                # Now write the actual build output
+                if keep_outputs:
+                    to_copy = ['u-boot*', '*.map', 'MLO', 'SPL',
+                               'include/autoconf.mk', 'spl/u-boot-spl*',
+                               'tpl/u-boot-tpl*', 'vpl/u-boot-vpl*']
+                    to_copy += [f'*{ext}' for ext in COMMON_EXTS]
+                    copy_files(result.out_dir, build_dir, '', to_copy)
+
+        elif not result.toolchain:
             # Indicate that the build failure due to lack of toolchain
             tools.write_file(done_file, '2\n', binary=False)
-
-        if not work_in_output:
-            # Write out the configuration files, with a special case for SPL
-            for dirname in ['', 'spl', 'tpl']:
-                copy_files(
-                    result.out_dir, build_dir, dirname,
-                    ['u-boot.cfg', 'spl/u-boot-spl.cfg', 'tpl/u-boot-tpl.cfg',
-                     '.config', 'include/autoconf.mk',
-                     'include/generated/autoconf.h'])
-
-            # Now write the actual build output
-            if keep_outputs:
-                to_copy = ['u-boot*', '*.map', 'MLO', 'SPL',
-                           'include/autoconf.mk', 'spl/u-boot-spl*',
-                           'tpl/u-boot-tpl*', 'vpl/u-boot-vpl*']
-                to_copy += [f'*{ext}' for ext in COMMON_EXTS]
-                copy_files(result.out_dir, build_dir, '', to_copy)
 
     def _send_result(self, result):
         """Send a result to the builder for processing

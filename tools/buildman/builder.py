@@ -200,6 +200,7 @@ class Builder:
         work_in_output: Use the output directory as the work directory and
             don't write to a separate output directory.
         show_bloat: Show detail for each function
+        no_output: Do not keep any generated files from the build
         thread_exceptions: List of exceptions raised by thread jobs
         no_lto (bool): True to set the NO_LTO flag when building
         reproducible_builds (bool): True to set SOURCE_DATE_EPOCH=0 for builds
@@ -261,7 +262,7 @@ class Builder:
                  mrproper=False, fallback_mrproper=False,
                  per_board_out_dir=False, config_only=False,
                  squash_config_y=False, warnings_as_errors=False,
-                 work_in_output=False, show_bloat=False,
+                 work_in_output=False, show_bloat=False, no_outputs=False,
                  test_thread_exceptions=False,
                  adjust_cfg=None, allow_missing=False, no_lto=False,
                  reproducible_builds=False, force_build=False,
@@ -393,7 +394,7 @@ class Builder:
             for i in range(self.num_threads):
                 t = builderthread.BuilderThread(
                         self, i, mrproper, per_board_out_dir,
-                        show_bloat,
+                        show_bloat, no_outputs,
                         test_exception=test_thread_exceptions)
                 t.setDaemon(True)
                 t.start()
@@ -405,7 +406,7 @@ class Builder:
             self.threads.append(t)
         else:
             self._single_builder = builderthread.BuilderThread(
-                self, -1, mrproper, per_board_out_dir, show_bloat)
+                self, -1, mrproper, per_board_out_dir, show_bloat, no_outputs)
 
         ignore_lines = ['(make.*Waiting for unfinished)', '(Segmentation fault)']
         self.re_make_err = re.compile('|'.join(ignore_lines))

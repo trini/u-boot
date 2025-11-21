@@ -105,6 +105,9 @@ def add_upto_m(parser):
     parser.add_argument(
           '--no-allow-missing', action='store_true', default=False,
           help='Disable telling binman to allow missing blobs')
+    parser.add_argument(
+          '--no-outputs', action='store_true', default=False,
+          help='Do not save any build information from a board')
     parser.add_argument('-n', '--dry-run', action='store_true', dest='dry_run',
           default=False, help="Do a dry run (describe actions, but do nothing)")
     parser.add_argument('-N', '--no-subdirs', action='store_true', dest='no_subdirs',
