@@ -652,3 +652,4 @@ stages:
                   exit $ret;
               fi;
           fi
+          du -sk /tmp/current/*
