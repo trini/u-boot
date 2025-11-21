@@ -151,17 +151,19 @@ class BuilderThread(threading.Thread):
         mrproper: Use 'make mrproper' before each reconfigure
         per_board_out_dir: True to build in a separate persistent directory per
             board rather than a thread-specific directory
+        show_bloat: Use 'nm' to determine function sizes for later use
         test_exception: Used for testing; True to raise an exception instead of
             reporting the build result
     """
     def __init__(self, builder, thread_num, mrproper, per_board_out_dir,
-                 test_exception=False):
+                 show_bloat, test_exception=False):
         """Set up a new builder thread"""
         threading.Thread.__init__(self)
         self.builder = builder
         self.thread_num = thread_num
         self.mrproper = mrproper
         self.per_board_out_dir = per_board_out_dir
+        self.show_bloat = show_bloat
         self.test_exception = test_exception
         self.toolchain = None
 
@@ -594,16 +596,17 @@ class BuilderThread(threading.Thread):
 
             lines = []
             for fname in BASE_ELF_FILENAMES:
-                cmd = [f'{self.toolchain.cross}nm', '--size-sort', fname]
-                nm_result = command.run_one(*cmd, capture=True,
-                                            capture_stderr=True,
-                                            cwd=result.out_dir,
-                                            raise_on_error=False, env=env)
-                if nm_result.stdout:
-                    nm_fname = self.builder.get_func_sizes_file(
-                        result.commit_upto, result.brd.target, fname)
-                    with open(nm_fname, 'w', encoding='utf-8') as outf:
-                        print(nm_result.stdout, end=' ', file=outf)
+                if self.show_bloat:
+                    cmd = [f'{self.toolchain.cross}nm', '--size-sort', fname]
+                    nm_result = command.run_one(*cmd, capture=True,
+                                                capture_stderr=True,
+                                                cwd=result.out_dir,
+                                                raise_on_error=False, env=env)
+                    if nm_result.stdout:
+                        nm_fname = self.builder.get_func_sizes_file(
+                            result.commit_upto, result.brd.target, fname)
+                        with open(nm_fname, 'w', encoding='utf-8') as outf:
+                            print(nm_result.stdout, end=' ', file=outf)
 
                 cmd = [f'{self.toolchain.cross}objdump', '-h', fname]
                 dump_result = command.run_one(*cmd, capture=True,
