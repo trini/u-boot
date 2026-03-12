@@ -181,7 +181,7 @@ config FIT_PRINT
 
 config SPL_FIT
 	bool "Support Flattened Image Tree within SPL"
-	depends on SPL
+	depends on SPL && SPL_LIBGENERIC_SUPPORT
 	select SPL_HASH
 	select SPL_OF_LIBFDT
 
@@ -429,12 +429,12 @@ config BOOT_DEFAULTS_CMDS
 	select CMD_FAT
 	select CMD_FS_GENERIC
 	select CMD_PART if PARTITIONS
-	select CMD_DHCP if CMD_NET
-	select CMD_PING if CMD_NET
-	select CMD_PXE if CMD_NET
+	select CMD_DHCP if !NO_NET
+	select CMD_PING if !NO_NET
+	select CMD_PXE if !NO_NET
 	select CMD_BOOTI if ARM64
 	select CMD_BOOTZ if ARM && !ARM64
-	imply CMD_MII if NET || NET_LWIP
+	imply CMD_MII if !NO_NET
 
 config BOOT_DEFAULTS
 	bool  # Common defaults for standard boot and distroboot
@@ -989,6 +989,7 @@ if SPL
 
 config SPL_UPL
 	bool "Write a UPL handoff in SPL"
+	depends on SPL_LIBGENERIC_SUPPORT
 	imply SPL_UPL_OUT
 	help
 	  This tells SPL to write a UPL handoff and pass it to the next phase
@@ -1006,6 +1007,7 @@ config SPL_UPL_WRITE
 
 config SPL_UPL_OUT
 	bool "upl - Support writing a Universal Payload handoff in SPL"
+	depends on SPL_UPL
 	select SPL_UPL_WRITE
 	help
 	  Provides support for encoding a UPL-format payload and passing it to

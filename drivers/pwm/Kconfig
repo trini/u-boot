@@ -26,6 +26,7 @@ if DM_PWM
 
 config PWM_ASPEED
 	bool "Enable support for the Aspeed PWM"
+	select REGMAP
 	select SYSCON
 	help
 	  This PWM is found on Ast2600 SoCs. It supports a programmable period
