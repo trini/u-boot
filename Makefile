@@ -819,6 +819,13 @@ u-boot.cfg spl/u-boot.cfg tpl/u-boot.cfg vpl/u-boot.cfg:
 -include include/autoconf.mk
 -include include/autoconf.mk.dep
 
+export LTO_ENABLE
+
+# This is y if LTO is enabled for this build. See NO_LTO=1 to disable LTO
+ifeq ($(NO_LTO),)
+LTO_ENABLE=$(if $(CONFIG_LTO),y)
+endif
+
 # We want to include arch/$(ARCH)/config.mk only when include/config/auto.conf
 # is up-to-date. When we switch to a different board configuration, old CONFIG
 # macros are still remaining in include/config/auto.conf. Without the following
@@ -857,13 +864,6 @@ export EFI_RELOC	# Filename of EFU relocation code in arch/$(ARCH)/lib
 export CFLAGS_EFI	# Compiler flags to add when building EFI app
 export CFLAGS_NON_EFI	# Compiler flags to remove when building EFI app
 export EFI_TARGET	# binutils target if EFI is natively supported
-
-export LTO_ENABLE
-
-# This is y if LTO is enabled for this build. See NO_LTO=1 to disable LTO
-ifeq ($(NO_LTO),)
-LTO_ENABLE=$(if $(CONFIG_LTO),y)
-endif
 
 # If board code explicitly specified LDSCRIPT or CONFIG_SYS_LDSCRIPT, use
 # that (or fail if absent).  Otherwise, search for a linker script in a
