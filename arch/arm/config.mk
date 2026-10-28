@@ -13,9 +13,7 @@ CFLAGS_NON_EFI := -fno-pic $(FIXED_REG) -ffunction-sections -fdata-sections \
 		  -fstack-protector-strong
 CFLAGS_EFI := -fpic -fshort-wchar
 
-ifneq ($(LTO_ENABLE)$(CONFIG_USE_PRIVATE_LIBGCC),yy)
 LDFLAGS_FINAL += --gc-sections
-endif
 
 ifneq ($(LTO_ENABLE).$(CONFIG_ARM64)$(CONFIG_SKIP_RELOCATE_CODE),y.)
 PLATFORM_RELFLAGS += -ffunction-sections -fdata-sections
