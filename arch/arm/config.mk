@@ -17,7 +17,7 @@ ifneq ($(LTO_ENABLE)$(CONFIG_USE_PRIVATE_LIBGCC),yy)
 LDFLAGS_FINAL += --gc-sections
 endif
 
-ifneq ($(LTO_ENABLE),y)
+ifneq ($(LTO_ENABLE).$(CONFIG_ARM64),y.)
 PLATFORM_RELFLAGS += -ffunction-sections -fdata-sections
 endif
 
