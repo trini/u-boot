@@ -325,9 +325,11 @@ int dcache_status(void)
 	return (get_cr() & CR_C) != 0;
 }
 
+#ifdef CONFIG_SYS_ARM_MMU
 void mmu_set_region_dcache_behaviour(phys_addr_t start, size_t size,
 				     enum dcache_option option)
 {
 	mmu_set_region_dcache_behaviour_phys(start, start, size, option);
 }
+#endif /* CONFIG_SYS_ARM_MMU */
 #endif
