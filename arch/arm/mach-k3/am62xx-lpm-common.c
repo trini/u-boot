@@ -9,9 +9,13 @@
 #include <config.h>
 #include <asm/arch/hardware.h>
 #include <asm/io.h>
+#include <linux/soc/ti/ti_sci_protocol.h>
+#include <linux/stddef.h>
+#include <vsprintf.h>
 #include <wait_bit.h>
 
 #include "am62xx-lpm-common.h"
+#include "common.h"
 
 /*
  * Shared WKUP_CTRL_MMR0 definitions used to remove IO isolation
@@ -121,3 +125,67 @@ int __maybe_unused wkup_ctrl_remove_can_io_isolation_if_set(void)
 		return wkup_ctrl_remove_can_io_isolation();
 	return 0;
 }
+
+#if IS_ENABLED(CONFIG_K3_IODDR)
+/*
+ * Restore TIFS context for LPM resume.
+ * @ctx_addr: DDR address pointing to the location containing the actual
+ *            TIFS context address. TIFS will read from this DDR location
+ *            to get the context address, so DDR must be accessible.
+ */
+static int lpm_restore_context(u64 ctx_addr)
+{
+	struct ti_sci_handle *ti_sci = get_ti_sci_handle();
+	int ret;
+
+	ret = ti_sci->ops.lpm_ops.min_context_restore(ti_sci, ctx_addr);
+	if (ret)
+		printf("Failed to restore context from DDR %d\n", ret);
+
+	return ret;
+}
+
+struct lpm_meta_data {
+	u64 dm_jump_address;
+	u64 tifs_context_save_address;
+	u64 reserved[30];
+} __packed;
+
+void __noreturn lpm_resume_from_ddr(u64 meta_data_addr)
+{
+	struct lpm_meta_data lpm_data;
+	typedef void __noreturn (*image_entry_noargs_t)(void);
+	image_entry_noargs_t image_entry;
+	u64 tifs_ctx_addr_ptr = meta_data_addr +
+				offsetof(struct lpm_meta_data, tifs_context_save_address);
+	int ret;
+
+	/*
+	 * DDR not accessible yet - cannot dereference meta_data_addr.
+	 * Pass DDR pointer to TIFS for context restore using pointer arithmetic.
+	 */
+	ret = lpm_restore_context(tifs_ctx_addr_ptr);
+	if (ret)
+		panic("Failed to restore context via DDR pointer 0x%x%08x\n",
+		      (u32)(tifs_ctx_addr_ptr >> 32),
+		      (u32)tifs_ctx_addr_ptr);
+
+	/* Now it's safe to read from DDR after context restore */
+	lpm_data = *(struct lpm_meta_data *)(uintptr_t)meta_data_addr;
+
+	image_entry = (image_entry_noargs_t)(uintptr_t)lpm_data.dm_jump_address;
+	printf("Resuming from DDR, jumping to stored DM loadaddr 0x%x%08x, TIFS context restored from 0x%x%08x\n",
+	       (u32)(lpm_data.dm_jump_address >> 32),
+	       (u32)lpm_data.dm_jump_address,
+	       (u32)(lpm_data.tifs_context_save_address >> 32),
+	       (u32)lpm_data.tifs_context_save_address);
+
+	image_entry();
+}
+#else
+
+void __noreturn lpm_resume_from_ddr(u64 meta_data_addr)
+{
+	panic("No IO+DDR support");
+}
+#endif
