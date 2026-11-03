@@ -9,6 +9,8 @@
 #include <config.h>
 #include <asm/arch/hardware.h>
 #include <asm/io.h>
+#include <dm/of_access.h>
+#include <dm/ofnode.h>
 #include <linux/soc/ti/ti_sci_protocol.h>
 #include <linux/stddef.h>
 #include <vsprintf.h>
@@ -127,6 +129,49 @@ int __maybe_unused wkup_ctrl_remove_can_io_isolation_if_set(void)
 }
 
 #if IS_ENABLED(CONFIG_K3_IODDR)
+int wkup_r5f_am62_lpm_meta_data_addr(u64 *meta_data_addr)
+{
+	struct ofnode_phandle_args memregion_phandle;
+	ofnode memregion;
+	ofnode wkup_bus;
+	int index;
+	int ret;
+
+	wkup_bus = ofnode_path("/bus@f0000/bus@b00000");
+	if (!ofnode_valid(wkup_bus)) {
+		printf("Failed to find wkup bus\n");
+		return -EINVAL;
+	}
+
+	memregion = ofnode_by_compatible(wkup_bus, "ti,am62-r5f");
+	if (!ofnode_valid(memregion)) {
+		printf("Failed to find r5f devicetree node ti,am62-r5f\n");
+		return -EINVAL;
+	}
+
+	index = ofnode_stringlist_search(memregion, "memory-region-names",
+					 "lpm-metadata");
+	if (index < 0) {
+		printf("Failed to find lpm-metadata memory region name\n");
+		return index;
+	}
+
+	ret = ofnode_parse_phandle_with_args(memregion, "memory-region", NULL,
+					     0, index, &memregion_phandle);
+	if (ret) {
+		printf("Failed to parse phandle for lpm-metadata memory region\n");
+		return ret;
+	}
+
+	ret = ofnode_read_u64_index(memregion_phandle.node, "reg", 0, meta_data_addr);
+	if (ret) {
+		printf("Failed to read lpm-metadata memory region\n");
+		return ret;
+	}
+
+	return 0;
+}
+
 /*
  * Restore TIFS context for LPM resume.
  * @ctx_addr: DDR address pointing to the location containing the actual
@@ -183,6 +228,10 @@ void __noreturn lpm_resume_from_ddr(u64 meta_data_addr)
 	image_entry();
 }
 #else
+int wkup_r5f_am62_lpm_meta_data_addr(u64 *meta_data_addr)
+{
+	return -EINVAL;
+}
 
 void __noreturn lpm_resume_from_ddr(u64 meta_data_addr)
 {
