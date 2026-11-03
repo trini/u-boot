@@ -122,6 +122,7 @@ struct k3_ddrss_data {
 	u32 flags;
 	bool (*is_lpm_resume)(void);
 	void (*ddrss_deassert_retention)(void);
+	void (*ddrss_clear_retention_latch)(void);
 };
 
 enum ecc_enable {
@@ -888,6 +889,9 @@ static int k3_ddrss_probe(struct udevice *dev)
 	is_lpm_resume = ddrss_data->is_lpm_resume && ddrss_data->is_lpm_resume();
 	if (is_lpm_resume)
 		dev_info(dev, "Detected IO+DDR resume\n");
+	else if (ddrss_data->ddrss_clear_retention_latch)
+		/* Clear the latch after any reset or partial I/O exit */
+		ddrss_data->ddrss_clear_retention_latch();
 
 	ddrss->dev = dev;
 	ret = k3_ddrss_power_on(ddrss);
@@ -1041,6 +1045,7 @@ static const struct k3_ddrss_data am62xx_data = {
 	.flags = SINGLE_DDR_SUBSYSTEM,
 	.is_lpm_resume = am62xx_wkup_conf_boot_is_resume,
 	.ddrss_deassert_retention = am62xx_ddrss_deassert_retention,
+	.ddrss_clear_retention_latch = am62xx_ddrss_run_retention_latch_clear_sequence,
 };
 
 static const struct k3_ddrss_data j721s2_data = {
