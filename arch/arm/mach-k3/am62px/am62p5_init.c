@@ -14,6 +14,7 @@
 
 #include "../sysfw-loader.h"
 #include "../common.h"
+#include "../am62xx-lpm-common.h"
 
 #define CTRLMMR_MCU_RST_CTRL             0x04518170
 #define RST_CTRL_ESM_ERROR_RST_EN_Z_MASK 0xFFFDFFFF
@@ -123,6 +124,10 @@ void board_init_f(ulong dummy)
 	if (ret)
 		panic("spl_early_init() failed: %d\n", ret);
 
+	ret = wkup_ctrl_remove_can_io_isolation_if_set();
+	if (ret)
+		panic("Failed to remove can IO isolation when set %d\n", ret);
+
 	/*
 	 * Process pinctrl for the serial0 and serial3, aka WKUP_UART0 and
 	 * MAIN_UART1 modules and continue regardless of the result of pinctrl.
@@ -211,9 +216,22 @@ void board_init_f(ulong dummy)
 		enable_mcu_esm_reset();
 	}
 
+	setup_qos();
+
+	if (wkup_ctrl_is_lpm_exit()) {
+		u64 meta_data_addr;
+
+		if (IS_ENABLED(CONFIG_TI_K3_BOARD_LFOSC))
+			enable_32k_lfosc();
+
+		ret = wkup_r5f_am62_lpm_meta_data_addr(&meta_data_addr);
+		if (ret)
+			panic("Failed to get LPM meta data address %d\n", ret);
+		lpm_resume_from_ddr(meta_data_addr);
+	}
+
 	spl_enable_cache();
 
-	setup_qos();
 	k3_fix_rproc_clock("/a53@0");
 }
 
